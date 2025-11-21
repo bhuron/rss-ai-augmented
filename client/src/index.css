@@ -505,25 +505,40 @@ body {
 }
 
 .category-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: white;
+  color: #1a1a1a;
   padding: 24px 24px 20px 24px;
   margin: 0;
   border-radius: 0;
+  border-bottom: 2px solid #e8e8e8;
+  position: relative;
+}
+
+.category-header::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #1a1a1a;
 }
 
 .category-header h2 {
-  margin: 0 0 6px 0;
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: -0.3px;
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #1a1a1a;
+  text-transform: uppercase;
 }
 
 .category-header p {
   margin: 0;
-  font-size: 13px;
-  opacity: 0.9;
+  font-size: 14px;
+  color: #666;
   font-weight: 400;
+  line-height: 1.5;
 }
 
 .settings-btn {
