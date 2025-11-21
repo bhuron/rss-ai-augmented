@@ -93,4 +93,25 @@ router.post('/import', async (req, res) => {
   }
 });
 
+router.post('/sync-all', async (req, res) => {
+  const feeds = feedOps.all();
+  let synced = 0;
+  let failed = 0;
+  
+  console.log(`Syncing ${feeds.length} feeds...`);
+  
+  for (const feed of feeds) {
+    try {
+      await syncFeed(feed.id, feed.url);
+      synced++;
+    } catch (error) {
+      console.error(`Failed to sync ${feed.title}:`, error.message);
+      failed++;
+    }
+  }
+  
+  console.log(`Sync complete: ${synced} succeeded, ${failed} failed`);
+  res.json({ synced, failed, total: feeds.length });
+});
+
 export default router;

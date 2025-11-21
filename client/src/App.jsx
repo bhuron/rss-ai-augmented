@@ -15,6 +15,14 @@ function App() {
 
   useEffect(() => {
     fetchFeeds();
+    syncAllFeeds(); // Sync on app load
+    
+    // Auto-refresh every 15 minutes
+    const interval = setInterval(() => {
+      syncAllFeeds();
+    }, 15 * 60 * 1000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -56,6 +64,15 @@ function App() {
   const syncFeed = async (id) => {
     await fetch(`/api/feeds/${id}/sync`, { method: 'POST' });
     fetchArticles();
+  };
+
+  const syncAllFeeds = async () => {
+    try {
+      await fetch('/api/feeds/sync-all', { method: 'POST' });
+      fetchArticles();
+    } catch (error) {
+      console.error('Failed to sync feeds:', error);
+    }
   };
 
   const exportFeeds = async () => {
