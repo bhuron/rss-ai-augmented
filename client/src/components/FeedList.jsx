@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function FeedList({ feeds, selectedFeed, onSelectFeed, onAddFeed, onDeleteFeed, onSyncFeed, onRenameFeed }) {
+function FeedList({ feeds, selectedFeed, onSelectFeed, onAddFeed, onDeleteFeed, onSyncFeed, onRenameFeed, unreadCounts }) {
   const [newFeedUrl, setNewFeedUrl] = useState('');
   const [editingFeedId, setEditingFeedId] = useState(null);
   const [editingTitle, setEditingTitle] = useState('');
@@ -33,6 +33,9 @@ function FeedList({ feeds, selectedFeed, onSelectFeed, onAddFeed, onDeleteFeed, 
           onClick={() => onSelectFeed(null)}
         >
           <span>All Feeds</span>
+          {unreadCounts.total > 0 && (
+            <span className="unread-count">{unreadCounts.total}</span>
+          )}
         </div>
         {feeds.map(feed => (
           <div
@@ -74,7 +77,7 @@ function FeedList({ feeds, selectedFeed, onSelectFeed, onAddFeed, onDeleteFeed, 
                 {feed.title}
               </span>
             )}
-            <div>
+            <div className="feed-item-actions">
               <button onClick={(e) => { e.stopPropagation(); onSyncFeed(feed.id); }}>
                 ↻
               </button>
@@ -82,6 +85,9 @@ function FeedList({ feeds, selectedFeed, onSelectFeed, onAddFeed, onDeleteFeed, 
                 ×
               </button>
             </div>
+            {unreadCounts[feed.id] > 0 && (
+              <span className="unread-count">{unreadCounts[feed.id]}</span>
+            )}
           </div>
         ))}
       </div>

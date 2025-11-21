@@ -7,6 +7,7 @@ import SettingsModal from './components/SettingsModal';
 function App() {
   const [feeds, setFeeds] = useState([]);
   const [articles, setArticles] = useState([]);
+  const [allArticles, setAllArticles] = useState([]); // Store all articles for counts
   const [selectedFeed, setSelectedFeed] = useState(null);
   const [showUnreadOnly, setShowUnreadOnly] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -46,6 +47,11 @@ function App() {
     const res = await fetch(`/api/articles?${params}`);
     const data = await res.json();
     setArticles(data);
+    
+    // Also fetch all articles for unread counts
+    const allRes = await fetch('/api/articles');
+    const allData = await allRes.json();
+    setAllArticles(allData);
   };
 
   const addFeed = async (url) => {
@@ -121,6 +127,9 @@ function App() {
     setArticles(prev => prev.map(a => 
       a.id === id ? { ...a, is_read: isRead } : a
     ));
+    setAllArticles(prev => prev.map(a => 
+      a.id === id ? { ...a, is_read: isRead } : a
+    ));
   };
 
   const markAllAsRead = async () => {
@@ -129,6 +138,9 @@ function App() {
     
     // Update locally first
     setArticles(prev => prev.map(a => ({ ...a, is_read: true })));
+    setAllArticles(prev => prev.map(a => 
+      unreadIds.includes(a.id) ? { ...a, is_read: true } : a
+    ));
     
     // Update server
     await Promise.all(unreadIds.map(id => 
@@ -139,6 +151,18 @@ function App() {
       })
     ));
   };
+
+  // Calculate unread counts per feed
+  const unreadCounts = React.useMemo(() => {
+    const counts = { total: 0 };
+    allArticles.forEach(article => {
+      if (!article.is_read) {
+        counts.total++;
+        counts[article.feed_id] = (counts[article.feed_id] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [allArticles]);
 
   const sortByAI = async () => {
     const MAX_ARTICLES = 50;
@@ -226,6 +250,7 @@ function App() {
         onDeleteFeed={deleteFeed}
         onSyncFeed={syncFeed}
         onRenameFeed={renameFeed}
+        unreadCounts={unreadCounts}
       />
       <div className="main-content">
         <Toolbar
