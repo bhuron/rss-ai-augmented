@@ -30,7 +30,7 @@ function FeedList({ feeds, selectedFeed, onSelectFeed, onAddFeed, onDeleteFeed, 
           className={`feed-item all-feeds ${selectedFeed === null ? 'active' : ''}`}
           onClick={() => onSelectFeed(null)}
         >
-          <span>📰 All Feeds</span>
+          <span>All Feeds</span>
         </div>
         {feeds.map(feed => (
           <div

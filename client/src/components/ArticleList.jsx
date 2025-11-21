@@ -71,18 +71,6 @@ function ArticleList({ articles, onMarkAsRead, categories }) {
             data-is-read={article.is_read}
             className={`article-card ${article.is_read ? 'read' : ''}`}
           >
-            <div className="article-actions">
-              <button
-                className="mark-read-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMarkAsRead(article.id, !article.is_read);
-                }}
-                title={article.is_read ? 'Mark as unread' : 'Mark as read'}
-              >
-                {article.is_read ? '✓' : '○'}
-              </button>
-            </div>
             <div 
               className="article-content-wrapper"
               onClick={() => {
@@ -104,6 +92,18 @@ function ArticleList({ articles, onMarkAsRead, categories }) {
               {article.image_url && (
                 <img src={article.image_url} alt="" className="article-image" />
               )}
+            </div>
+            <div className="article-actions">
+              <button
+                className="mark-read-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMarkAsRead(article.id, !article.is_read);
+                }}
+                title={article.is_read ? 'Mark as unread' : 'Mark as read'}
+              >
+                {article.is_read ? '✓' : '○'}
+              </button>
             </div>
           </div>
         ))}
@@ -137,18 +137,6 @@ function ArticleList({ articles, onMarkAsRead, categories }) {
                 data-is-read={article.is_read}
                 className={`article-card ${article.is_read ? 'read' : ''}`}
               >
-                <div className="article-actions">
-                  <button
-                    className="mark-read-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onMarkAsRead(article.id, !article.is_read);
-                    }}
-                    title={article.is_read ? 'Mark as unread' : 'Mark as read'}
-                  >
-                    {article.is_read ? '✓' : '○'}
-                  </button>
-                </div>
                 <div 
                   className="article-content-wrapper"
                   onClick={() => {
@@ -170,6 +158,18 @@ function ArticleList({ articles, onMarkAsRead, categories }) {
                   {article.image_url && (
                     <img src={article.image_url} alt="" className="article-image" />
                   )}
+                </div>
+                <div className="article-actions">
+                  <button
+                    className="mark-read-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onMarkAsRead(article.id, !article.is_read);
+                    }}
+                    title={article.is_read ? 'Mark as unread' : 'Mark as read'}
+                  >
+                    {article.is_read ? '✓' : '○'}
+                  </button>
                 </div>
               </div>
             ))}

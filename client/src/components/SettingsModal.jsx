@@ -132,14 +132,14 @@ function SettingsModal({ isOpen, onClose, onExport, onImport }) {
           </button>
         </div>
 
-        <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #e0e0e0' }}>
-          <h3 style={{ fontSize: '14px', color: '#666', marginBottom: '12px' }}>Feed Management</h3>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={onExport} style={{ flex: 1, padding: '8px', background: '#f8f9fa', color: '#333', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}>
-              📥 Export Feeds
+        <div className="feed-management-section">
+          <h3>Feed Management</h3>
+          <div className="feed-management-buttons">
+            <button onClick={onExport} className="secondary-action-btn">
+              Export Feeds
             </button>
-            <button onClick={handleImport} style={{ flex: 1, padding: '8px', background: '#f8f9fa', color: '#333', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}>
-              📤 Import Feeds
+            <button onClick={handleImport} className="secondary-action-btn">
+              Import Feeds
             </button>
           </div>
         </div>
