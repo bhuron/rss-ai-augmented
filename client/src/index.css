@@ -726,3 +726,30 @@ body {
   background: white;
   outline: none;
 }
+
+.add-feed button {
+  padding: 8px 12px;
+  background: white;
+  color: #666;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: 400;
+  transition: all 0.15s ease;
+  font-family: 'Open Sans', sans-serif;
+  line-height: 1;
+}
+
+.add-feed button:hover {
+  background: #f8f9fa;
+  border-color: #d0d0d0;
+  color: #333;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.add-feed button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}

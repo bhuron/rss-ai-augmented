@@ -24,7 +24,7 @@ function FeedList({ feeds, selectedFeed, onSelectFeed, onAddFeed, onDeleteFeed, 
             onChange={(e) => setNewFeedUrl(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
           />
-          <button onClick={handleAdd}>Add</button>
+          <button onClick={handleAdd} title="Add feed">+</button>
         </div>
       </div>
       <div className="feed-list">
