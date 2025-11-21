@@ -26,6 +26,23 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    // Global keyboard shortcut to clear categories
+    const handleKeyDown = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      
+      if (e.key === 'c' && categories) {
+        e.preventDefault();
+        setCategories(null);
+        // Re-fetch to get chronological order
+        fetchArticles();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [categories]);
+
 
 
   useEffect(() => {

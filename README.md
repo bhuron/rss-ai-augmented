@@ -46,6 +46,7 @@ All configuration is done through the web UI - no environment variables needed!
 - `Enter` / `o` - Open article in new tab (marks as read)
 - `v` - Open article without marking as read
 - `m` - Toggle read/unread status
+- `c` - Clear categories and return to chronological view
 
 ## License
 
