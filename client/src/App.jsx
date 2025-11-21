@@ -8,7 +8,7 @@ function App() {
   const [feeds, setFeeds] = useState([]);
   const [articles, setArticles] = useState([]);
   const [selectedFeed, setSelectedFeed] = useState(null);
-  const [showUnreadOnly, setShowUnreadOnly] = useState(false);
+  const [showUnreadOnly, setShowUnreadOnly] = useState(true);
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [categories, setCategories] = useState(null);
@@ -110,17 +110,17 @@ function App() {
   };
 
   const markAsRead = async (id, isRead) => {
-    // Update locally first for instant feedback
-    setArticles(prev => prev.map(a => 
-      a.id === id ? { ...a, is_read: isRead } : a
-    ));
-    
-    // Then update server
+    // Update server
     await fetch(`/api/articles/${id}/read`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isRead })
     });
+    
+    // Update locally after server confirms
+    setArticles(prev => prev.map(a => 
+      a.id === id ? { ...a, is_read: isRead } : a
+    ));
   };
 
   const sortByAI = async () => {

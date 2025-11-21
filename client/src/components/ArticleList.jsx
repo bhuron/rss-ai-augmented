@@ -44,9 +44,9 @@ function ArticleList({ articles, onMarkAsRead, categories }) {
   });
 
   useEffect(() => {
-    // Reset selection when categories change, but not when articles update
+    // Reset selection when articles or categories change
     setSelectedIndex(0);
-  }, [categories]);
+  }, [articles.length, categories]);
 
   useEffect(() => {
     // Keyboard shortcuts for article navigation
@@ -113,9 +113,9 @@ function ArticleList({ articles, onMarkAsRead, categories }) {
           // If article has scrolled past the top of viewport and is unread
           if (entry.boundingClientRect.top < 0 && !entry.isIntersecting) {
             const articleId = parseInt(entry.target.dataset.articleId);
-            const isRead = entry.target.dataset.isRead === 'true';
+            const article = articles.find(a => a.id === articleId);
             
-            if (!isRead) {
+            if (article && !article.is_read) {
               // Mark as read after a short delay to ensure they actually scrolled past
               setTimeout(() => {
                 onMarkAsRead(articleId, true);
