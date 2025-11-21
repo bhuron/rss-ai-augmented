@@ -90,6 +90,44 @@ export const articleOps = {
       article.is_read = isRead;
       saveDatabase();
     }
+  },
+  cleanup: () => {
+    const now = new Date();
+    const tenDaysAgo = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    
+    // Sort articles by date (newest first)
+    const sortedArticles = [...db.articles].sort((a, b) => 
+      new Date(b.pub_date) - new Date(a.pub_date)
+    );
+    
+    // Keep the 100 most recent articles
+    const recentIds = new Set(sortedArticles.slice(0, 100).map(a => a.id));
+    
+    const beforeCount = db.articles.length;
+    db.articles = db.articles.filter(article => {
+      // Always keep if in top 100 most recent
+      if (recentIds.has(article.id)) return true;
+      
+      const articleDate = new Date(article.pub_date);
+      
+      // Delete read articles older than 10 days
+      if (article.is_read && articleDate < tenDaysAgo) return false;
+      
+      // Delete unread articles older than 30 days
+      if (!article.is_read && articleDate < thirtyDaysAgo) return false;
+      
+      // Keep everything else
+      return true;
+    });
+    
+    const deleted = beforeCount - db.articles.length;
+    if (deleted > 0) {
+      saveDatabase();
+      console.log(`Cleaned up ${deleted} old articles`);
+    }
+    
+    return deleted;
   }
 };
 

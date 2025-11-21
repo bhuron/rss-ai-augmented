@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { initDatabase } from './services/database.js';
+import { initDatabase, articleOps } from './services/database.js';
 import feedRoutes from './routes/feeds.js';
 import articleRoutes from './routes/articles.js';
 import aiRoutes from './routes/ai.js';
@@ -17,6 +17,14 @@ app.use(express.json());
 
 // Initialize database
 initDatabase();
+
+// Clean up old articles on startup
+articleOps.cleanup();
+
+// Clean up old articles daily
+setInterval(() => {
+  articleOps.cleanup();
+}, 24 * 60 * 60 * 1000); // Every 24 hours
 
 // Routes
 app.use('/api/feeds', feedRoutes);
