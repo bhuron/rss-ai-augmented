@@ -769,3 +769,18 @@ body {
 .feed-item.active .unread-count {
   color: #666;
 }
+
+.ai-loading-banner {
+  background: #f0f8ff;
+  color: #0066cc;
+  padding: 12px 20px;
+  text-align: center;
+  font-size: 13px;
+  border-bottom: 1px solid #d0e8ff;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}

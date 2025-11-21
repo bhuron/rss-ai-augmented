@@ -175,7 +175,13 @@ function App() {
       if (!proceed) return;
     }
     
+    // Show loading indicator
     setLoading(true);
+    
+    // Immediately show articles in current order so users can start reading
+    // (articles are already displayed, so nothing to do here)
+    
+    // Start AI sorting in background
     try {
       const articlesToSort = articles.slice(0, MAX_ARTICLES);
       const remainingArticles = articles.slice(MAX_ARTICLES);
@@ -200,7 +206,7 @@ function App() {
         throw new Error('Invalid response from server');
       }
       
-      // Append remaining articles at the end
+      // Update with AI-sorted results when ready
       const allArticles = [...result.articles, ...remainingArticles];
       
       setArticles(allArticles);
@@ -208,8 +214,9 @@ function App() {
     } catch (error) {
       console.error('AI sorting error:', error);
       alert('AI sorting failed: ' + error.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const generateDigest = async () => {
@@ -262,7 +269,11 @@ function App() {
           onMarkAllAsRead={markAllAsRead}
           hasUnread={articles.some(a => !a.is_read)}
         />
-        {loading && <div className="loading">Processing with AI...</div>}
+        {loading && (
+          <div className="ai-loading-banner">
+            AI is analyzing articles... Results will appear when ready.
+          </div>
+        )}
         <ArticleList articles={articles} onMarkAsRead={markAsRead} categories={categories} />
       </div>
       <SettingsModal 

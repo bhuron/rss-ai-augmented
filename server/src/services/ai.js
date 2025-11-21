@@ -90,9 +90,9 @@ function parseJSON(content) {
 }
 
 export async function sortArticles(config, articles, criteria = 'relevance and importance') {
-  // Limit article list to keep prompt manageable
+  // Limit article list to keep prompt manageable - truncate titles more aggressively
   const articleList = articles.map(a => {
-    const title = a.title.length > 100 ? a.title.substring(0, 100) + '...' : a.title;
+    const title = a.title.length > 80 ? a.title.substring(0, 80) + '...' : a.title;
     return `ID:${a.id} - ${title}`;
   }).join('\n');
 
@@ -112,11 +112,11 @@ Return a JSON object with categories and sorted article IDs:
 IMPORTANT: 
 - Use the numeric IDs from "ID:xxx"
 - Include ALL ${articles.length} article IDs in sortedIds
-- Create 3-6 meaningful categories
-- Keep descriptions under 100 characters`;
+- Create 3-5 meaningful categories
+- Keep descriptions under 80 characters`;
 
   try {
-    const content = await callLLM(config, [{ role: 'user', content: prompt }], 0.3);
+    const content = await callLLM(config, [{ role: 'user', content: prompt }], 0.2);
     const result = parseJSON(content);
     
     // Validate response
@@ -166,15 +166,16 @@ IMPORTANT:
 }
 
 export async function generateDigest(config, articles) {
+  // Reduce content length to speed up processing
   const articleList = articles.map(a => 
-    `- ${a.title}\n  ${a.content?.substring(0, 300)}...`
+    `- ${a.title}\n  ${a.content?.substring(0, 150)}...`
   ).join('\n\n');
 
   const prompt = `Create a concise digest of these articles. Group by topic and highlight key insights:
 
 ${articleList}
 
-Format your response in clean markdown with headers and bullet points.`;
+Format your response in clean markdown with headers and bullet points. Keep it brief.`;
 
   return await callLLM(config, [{ role: 'user', content: prompt }], 0.7);
 }
