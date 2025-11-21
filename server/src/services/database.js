@@ -63,7 +63,10 @@ export const articleOps = {
     })).sort((a, b) => new Date(b.pub_date) - new Date(a.pub_date));
   },
   getByIds: (ids) => {
-    return db.articles.filter(a => ids.includes(a.id));
+    return db.articles.filter(a => ids.includes(a.id)).map(a => ({
+      ...a,
+      feed_title: db.feeds.find(f => f.id === a.feed_id)?.title || 'Unknown'
+    }));
   },
   insert: (feedId, title, link, content, pubDate, imageUrl = null) => {
     const existing = db.articles.find(a => a.link === link);
