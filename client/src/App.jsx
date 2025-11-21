@@ -180,20 +180,13 @@ function App() {
       <div className="main-content">
         <Toolbar
           onSortByAI={sortByAI}
-          onGenerateDigest={generateDigest}
           onToggleUnread={() => setShowUnreadOnly(!showUnreadOnly)}
           showUnreadOnly={showUnreadOnly}
           hasArticles={articles.length > 0}
-          onCloseDigest={() => setDigest(null)}
-          showingDigest={!!digest}
           onOpenSettings={() => setShowSettings(true)}
         />
         {loading && <div className="loading">Processing with AI...</div>}
-        {digest ? (
-          <div className="digest-view">{digest}</div>
-        ) : (
-          <ArticleList articles={articles} onMarkAsRead={markAsRead} categories={categories} />
-        )}
+        <ArticleList articles={articles} onMarkAsRead={markAsRead} categories={categories} />
       </div>
       <SettingsModal 
         isOpen={showSettings} 
