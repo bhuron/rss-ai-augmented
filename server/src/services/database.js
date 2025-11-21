@@ -58,7 +58,7 @@ export const articleOps = {
   getByIds: (ids) => {
     return db.articles.filter(a => ids.includes(a.id));
   },
-  insert: (feedId, title, link, content, pubDate) => {
+  insert: (feedId, title, link, content, pubDate, imageUrl = null) => {
     const existing = db.articles.find(a => a.link === link);
     if (existing) return null;
     
@@ -69,6 +69,7 @@ export const articleOps = {
       link,
       content,
       pub_date: pubDate,
+      image_url: imageUrl,
       is_read: false,
       created_at: new Date().toISOString()
     };

@@ -92,13 +92,18 @@ function ArticleList({ articles, onMarkAsRead, categories }) {
                 }
               }}
             >
-              <h3>{article.title}</h3>
-              <div className="article-meta">
-                {article.feed_title} • {new Date(article.pub_date).toLocaleDateString()}
+              <div className="article-text">
+                <h3>{article.title}</h3>
+                <div className="article-meta">
+                  {article.feed_title} • {new Date(article.pub_date).toLocaleDateString()}
+                </div>
+                <div className="article-content">
+                  {article.content?.substring(0, 200)}...
+                </div>
               </div>
-              <div className="article-content">
-                {article.content?.substring(0, 200)}...
-              </div>
+              {article.image_url && (
+                <img src={article.image_url} alt="" className="article-image" />
+              )}
             </div>
           </div>
         ))}
@@ -153,13 +158,18 @@ function ArticleList({ articles, onMarkAsRead, categories }) {
                     }
                   }}
                 >
-                  <h3>{article.title}</h3>
-                  <div className="article-meta">
-                    {article.feed_title} • {new Date(article.pub_date).toLocaleDateString()}
+                  <div className="article-text">
+                    <h3>{article.title}</h3>
+                    <div className="article-meta">
+                      {article.feed_title} • {new Date(article.pub_date).toLocaleDateString()}
+                    </div>
+                    <div className="article-content">
+                      {article.content?.substring(0, 200)}...
+                    </div>
                   </div>
-                  <div className="article-content">
-                    {article.content?.substring(0, 200)}...
-                  </div>
+                  {article.image_url && (
+                    <img src={article.image_url} alt="" className="article-image" />
+                  )}
                 </div>
               </div>
             ))}
