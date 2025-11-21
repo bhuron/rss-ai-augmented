@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 
-function FeedList({ feeds, selectedFeed, onSelectFeed, onAddFeed, onDeleteFeed, onSyncFeed }) {
+function FeedList({ feeds, selectedFeed, onSelectFeed, onAddFeed, onDeleteFeed, onSyncFeed, onRenameFeed }) {
   const [newFeedUrl, setNewFeedUrl] = useState('');
+  const [editingFeedId, setEditingFeedId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState('');
 
   const handleAdd = () => {
     if (newFeedUrl.trim()) {
@@ -38,7 +40,40 @@ function FeedList({ feeds, selectedFeed, onSelectFeed, onAddFeed, onDeleteFeed, 
             className={`feed-item ${selectedFeed === feed.id ? 'active' : ''}`}
             onClick={() => onSelectFeed(feed.id)}
           >
-            <span>{feed.title}</span>
+            {editingFeedId === feed.id ? (
+              <input
+                type="text"
+                value={editingTitle}
+                onChange={(e) => setEditingTitle(e.target.value)}
+                onBlur={() => {
+                  if (editingTitle.trim()) {
+                    onRenameFeed(feed.id, editingTitle.trim());
+                  }
+                  setEditingFeedId(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    if (editingTitle.trim()) {
+                      onRenameFeed(feed.id, editingTitle.trim());
+                    }
+                    setEditingFeedId(null);
+                  } else if (e.key === 'Escape') {
+                    setEditingFeedId(null);
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+                autoFocus
+                className="feed-rename-input"
+              />
+            ) : (
+              <span onDoubleClick={(e) => {
+                e.stopPropagation();
+                setEditingFeedId(feed.id);
+                setEditingTitle(feed.title);
+              }}>
+                {feed.title}
+              </span>
+            )}
             <div>
               <button onClick={(e) => { e.stopPropagation(); onSyncFeed(feed.id); }}>
                 ↻

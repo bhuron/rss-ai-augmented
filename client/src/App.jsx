@@ -68,6 +68,18 @@ function App() {
     fetchArticles();
   };
 
+  const renameFeed = async (id, newTitle) => {
+    setFeeds(prev => prev.map(f => 
+      f.id === id ? { ...f, title: newTitle } : f
+    ));
+    
+    await fetch(`/api/feeds/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: newTitle })
+    });
+  };
+
   const syncAllFeeds = async () => {
     try {
       await fetch('/api/feeds/sync-all', { method: 'POST' });
@@ -196,6 +208,7 @@ function App() {
         onAddFeed={addFeed}
         onDeleteFeed={deleteFeed}
         onSyncFeed={syncFeed}
+        onRenameFeed={renameFeed}
       />
       <div className="main-content">
         <Toolbar

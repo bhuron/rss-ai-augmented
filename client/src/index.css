@@ -703,3 +703,14 @@ body {
   border-color: #d0d0d0;
   color: #333;
 }
+
+.feed-rename-input {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid #007bff;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: 'Open Sans', sans-serif;
+  background: white;
+  outline: none;
+}

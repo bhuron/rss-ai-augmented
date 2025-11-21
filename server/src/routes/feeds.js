@@ -29,6 +29,18 @@ router.delete('/:id', (req, res) => {
   res.json({ success: true });
 });
 
+router.patch('/:id', (req, res) => {
+  const { title } = req.body;
+  const feed = feedOps.get(parseInt(req.params.id));
+  
+  if (!feed) {
+    return res.status(404).json({ error: 'Feed not found' });
+  }
+  
+  feedOps.update(parseInt(req.params.id), title);
+  res.json({ success: true });
+});
+
 router.post('/:id/sync', async (req, res) => {
   const feed = feedOps.get(parseInt(req.params.id));
   

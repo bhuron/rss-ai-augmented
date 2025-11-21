@@ -37,6 +37,13 @@ export const feedOps = {
     saveDatabase();
     return feed;
   },
+  update: (id, title) => {
+    const feed = db.feeds.find(f => f.id === id);
+    if (feed) {
+      feed.title = title;
+      saveDatabase();
+    }
+  },
   delete: (id) => {
     db.feeds = db.feeds.filter(f => f.id !== id);
     db.articles = db.articles.filter(a => a.feed_id !== id);
