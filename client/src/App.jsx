@@ -123,6 +123,23 @@ function App() {
     ));
   };
 
+  const markAllAsRead = async () => {
+    const unreadIds = articles.filter(a => !a.is_read).map(a => a.id);
+    if (unreadIds.length === 0) return;
+    
+    // Update locally first
+    setArticles(prev => prev.map(a => ({ ...a, is_read: true })));
+    
+    // Update server
+    await Promise.all(unreadIds.map(id => 
+      fetch(`/api/articles/${id}/read`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isRead: true })
+      })
+    ));
+  };
+
   const sortByAI = async () => {
     const MAX_ARTICLES = 50;
     
@@ -217,6 +234,8 @@ function App() {
           showUnreadOnly={showUnreadOnly}
           hasArticles={articles.length > 0}
           onOpenSettings={() => setShowSettings(true)}
+          onMarkAllAsRead={markAllAsRead}
+          hasUnread={articles.some(a => !a.is_read)}
         />
         {loading && <div className="loading">Processing with AI...</div>}
         <ArticleList articles={articles} onMarkAsRead={markAsRead} categories={categories} />

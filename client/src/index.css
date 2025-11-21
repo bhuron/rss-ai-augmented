@@ -547,18 +547,30 @@ body {
   line-height: 1.5;
 }
 
-.settings-btn {
-  margin-left: auto;
+.icon-btn {
   padding: 7px 12px !important;
   font-size: 16px;
   border: none !important;
   background: transparent !important;
+  color: #666;
+  filter: grayscale(0.3) brightness(0.8);
 }
 
-.settings-btn:hover {
+.icon-btn:hover:not(:disabled) {
   background: #f0f0f0 !important;
   transform: none !important;
   box-shadow: none !important;
+  color: #333;
+  filter: grayscale(0) brightness(1);
+}
+
+.icon-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.toolbar-inner .icon-btn:last-child {
+  margin-left: auto;
 }
 
 .modal-overlay {

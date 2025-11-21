@@ -1,16 +1,33 @@
 import React from 'react';
 
-function Toolbar({ onSortByAI, onToggleUnread, showUnreadOnly, hasArticles, onOpenSettings }) {
+function Toolbar({ onSortByAI, onToggleUnread, showUnreadOnly, hasArticles, onOpenSettings, onMarkAllAsRead, hasUnread }) {
   return (
     <div className="toolbar">
       <div className="toolbar-inner">
-        <button onClick={onToggleUnread}>
-          {showUnreadOnly ? 'Show All' : 'Show Unread'}
+        <button 
+          onClick={onSortByAI} 
+          disabled={!hasArticles}
+          className="icon-btn"
+          title="AI Sort"
+        >
+          ✨
         </button>
-        <button onClick={onSortByAI} disabled={!hasArticles}>
-          AI Sort
+        <button 
+          onClick={onToggleUnread}
+          className="icon-btn"
+          title={showUnreadOnly ? 'Show all articles' : 'Show unread only'}
+        >
+          {showUnreadOnly ? '👁️' : '👁️‍🗨️'}
         </button>
-        <button onClick={onOpenSettings} className="settings-btn" title="Settings">
+        <button 
+          onClick={onMarkAllAsRead} 
+          disabled={!hasUnread}
+          className="icon-btn" 
+          title="Mark all as read"
+        >
+          ✓
+        </button>
+        <button onClick={onOpenSettings} className="icon-btn" title="Settings">
           ⚙️
         </button>
       </div>
