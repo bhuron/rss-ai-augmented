@@ -1,8 +1,109 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 function ArticleList({ articles, onMarkAsRead, categories }) {
   const observerRef = useRef(null);
   const articleRefs = useRef(new Map());
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  // Build navigation list based on view type
+  const getNavigationList = () => {
+    if (!categories || categories.length === 0) {
+      return articles;
+    }
+    // In category view, build flat list in category order
+    const ordered = [];
+    const articleMap = new Map(articles.map(a => [a.id, a]));
+    const usedIds = new Set();
+    
+    categories.forEach(category => {
+      category.articleIds?.forEach(id => {
+        const article = articleMap.get(id);
+        if (article && !usedIds.has(id)) {
+          ordered.push(article);
+          usedIds.add(id);
+        }
+      });
+    });
+    
+    // Add any articles not in categories at the end
+    articles.forEach(article => {
+      if (!usedIds.has(article.id)) {
+        ordered.push(article);
+      }
+    });
+    
+    return ordered;
+  };
+
+  const navigationList = getNavigationList();
+  
+  // Create index map for fast lookups
+  const articleIndexMap = new Map();
+  navigationList.forEach((article, index) => {
+    articleIndexMap.set(article.id, index);
+  });
+
+  useEffect(() => {
+    // Reset selection when categories change, but not when articles update
+    setSelectedIndex(0);
+  }, [categories]);
+
+  useEffect(() => {
+    // Keyboard shortcuts for article navigation
+    const navList = getNavigationList();
+    
+    const handleKeyDown = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      
+      const currentArticle = navList[selectedIndex];
+      const maxIndex = navList.length - 1;
+      
+      if (e.key === 'j' || e.key === 'ArrowDown' || e.key === 'n') {
+        e.preventDefault();
+        // Mark current as read before moving
+        if (currentArticle && !currentArticle.is_read) {
+          onMarkAsRead(currentArticle.id, true);
+        }
+        if (selectedIndex < maxIndex) {
+          const newIndex = selectedIndex + 1;
+          setSelectedIndex(newIndex);
+          const article = navList[newIndex];
+          const element = articleRefs.current.get(article?.id);
+          element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      } else if (e.key === 'k' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (selectedIndex > 0) {
+          const newIndex = selectedIndex - 1;
+          setSelectedIndex(newIndex);
+          const article = navList[newIndex];
+          const element = articleRefs.current.get(article?.id);
+          element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      } else if (e.key === 'Enter' || e.key === 'o') {
+        e.preventDefault();
+        if (currentArticle) {
+          window.open(currentArticle.link, '_blank');
+          if (!currentArticle.is_read) {
+            onMarkAsRead(currentArticle.id, true);
+          }
+        }
+      } else if (e.key === 'v') {
+        e.preventDefault();
+        if (currentArticle) {
+          window.open(currentArticle.link, '_blank');
+        }
+      } else if (e.key === 'm') {
+        e.preventDefault();
+        if (currentArticle) {
+          onMarkAsRead(currentArticle.id, !currentArticle.is_read);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [articles, categories, selectedIndex, onMarkAsRead]);
 
   useEffect(() => {
     // Create intersection observer to detect when articles are scrolled past
@@ -69,7 +170,7 @@ function ArticleList({ articles, onMarkAsRead, categories }) {
             ref={(el) => setArticleRef(article.id, el)}
             data-article-id={article.id}
             data-is-read={article.is_read}
-            className={`article-card ${article.is_read ? 'read' : ''}`}
+            className={`article-card ${article.is_read ? 'read' : ''} ${navigationList.indexOf(article) === selectedIndex ? 'selected' : ''}`}
           >
             <div 
               className="article-content-wrapper"
@@ -135,7 +236,7 @@ function ArticleList({ articles, onMarkAsRead, categories }) {
                 ref={(el) => setArticleRef(article.id, el)}
                 data-article-id={article.id}
                 data-is-read={article.is_read}
-                className={`article-card ${article.is_read ? 'read' : ''}`}
+                className={`article-card ${article.is_read ? 'read' : ''} ${articleIndexMap.get(article.id) === selectedIndex ? 'selected' : ''}`}
               >
                 <div 
                   className="article-content-wrapper"

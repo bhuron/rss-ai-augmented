@@ -25,6 +25,8 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+
+
   useEffect(() => {
     fetchArticles();
     setCategories(null); // Clear categories when filter changes
@@ -96,12 +98,17 @@ function App() {
   };
 
   const markAsRead = async (id, isRead) => {
+    // Update locally first for instant feedback
+    setArticles(prev => prev.map(a => 
+      a.id === id ? { ...a, is_read: isRead } : a
+    ));
+    
+    // Then update server
     await fetch(`/api/articles/${id}/read`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isRead })
     });
-    fetchArticles();
   };
 
   const sortByAI = async () => {
