@@ -8,6 +8,10 @@ An intelligent RSS reader that uses AI to sort and digest articles.
 - AI-powered article sorting by relevance
 - AI-generated digests
 - **Provider-agnostic LLM support** (OpenAI, Anthropic, OpenRouter, Ollama, or custom)
+- Collapsible sidebar with hover interaction
+- Keyboard shortcuts for navigation
+- Unread article tracking
+- OPML import/export
 
 ## Setup
 
@@ -35,3 +39,21 @@ Open http://localhost:5173 and click the ⚙️ Settings button to configure you
 - **Custom** (any OpenAI-compatible API)
 
 All configuration is done through the web UI - no environment variables needed!
+
+## Keyboard Shortcuts
+- `j` / `↓` / `n` - Next article (marks current as read)
+- `k` / `↑` - Previous article
+- `Enter` / `o` - Open article in new tab (marks as read)
+- `v` - Open article without marking as read
+- `m` - Toggle read/unread status
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
+Copyright (C) 2025 RSS + LLM Reader Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
