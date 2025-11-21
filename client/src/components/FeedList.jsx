@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function FeedList({ feeds, selectedFeed, onSelectFeed, onAddFeed, onDeleteFeed, onSyncFeed, onExport, onImport }) {
+function FeedList({ feeds, selectedFeed, onSelectFeed, onAddFeed, onDeleteFeed, onSyncFeed }) {
   const [newFeedUrl, setNewFeedUrl] = useState('');
 
   const handleAdd = () => {
@@ -8,23 +8,6 @@ function FeedList({ feeds, selectedFeed, onSelectFeed, onAddFeed, onDeleteFeed, 
       onAddFeed(newFeedUrl);
       setNewFeedUrl('');
     }
-  };
-
-  const handleImport = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.opml,.xml';
-    input.onchange = (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          onImport(event.target.result);
-        };
-        reader.readAsText(file);
-      }
-    };
-    input.click();
   };
 
   return (
@@ -40,10 +23,6 @@ function FeedList({ feeds, selectedFeed, onSelectFeed, onAddFeed, onDeleteFeed, 
             onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
           />
           <button onClick={handleAdd}>Add</button>
-        </div>
-        <div className="feed-actions">
-          <button onClick={onExport} className="secondary-btn">📥 Export</button>
-          <button onClick={handleImport} className="secondary-btn">📤 Import</button>
         </div>
       </div>
       <div className="feed-list">

@@ -8,7 +8,7 @@ const PROVIDERS = [
   { id: 'custom', name: 'Custom (OpenAI-compatible)', defaultModel: 'gpt-3.5-turbo', needsBaseUrl: true },
 ];
 
-function SettingsModal({ isOpen, onClose }) {
+function SettingsModal({ isOpen, onClose, onExport, onImport }) {
   const [config, setConfig] = useState({
     provider: 'openai',
     apiKey: '',
@@ -50,6 +50,24 @@ function SettingsModal({ isOpen, onClose }) {
     });
     setSaving(false);
     onClose();
+  };
+
+  const handleImport = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.opml,.xml';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          onImport(event.target.result);
+          onClose();
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
   };
 
   if (!isOpen) return null;
@@ -112,6 +130,18 @@ function SettingsModal({ isOpen, onClose }) {
           <button onClick={handleSave} disabled={saving}>
             {saving ? 'Saving...' : 'Save'}
           </button>
+        </div>
+
+        <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #e0e0e0' }}>
+          <h3 style={{ fontSize: '14px', color: '#666', marginBottom: '12px' }}>Feed Management</h3>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={onExport} style={{ flex: 1, padding: '8px', background: '#f8f9fa', color: '#333', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}>
+              📥 Export Feeds
+            </button>
+            <button onClick={handleImport} style={{ flex: 1, padding: '8px', background: '#f8f9fa', color: '#333', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}>
+              📤 Import Feeds
+            </button>
+          </div>
         </div>
       </div>
     </div>

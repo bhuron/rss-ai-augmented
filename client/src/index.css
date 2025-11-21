@@ -54,14 +54,7 @@ body {
   cursor: pointer;
 }
 
-.feed-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-}
-
 .secondary-btn {
-  flex: 1;
   padding: 8px 12px;
   background: #6c757d;
   color: white;
@@ -232,16 +225,6 @@ body {
 .article-content {
   color: #555;
   line-height: 1.6;
-}
-
-.digest-view {
-  background: white;
-  padding: 30px;
-  margin: 20px;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  white-space: pre-wrap;
-  line-height: 1.8;
 }
 
 .loading {

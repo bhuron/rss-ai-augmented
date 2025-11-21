@@ -9,7 +9,6 @@ function App() {
   const [articles, setArticles] = useState([]);
   const [selectedFeed, setSelectedFeed] = useState(null);
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
-  const [digest, setDigest] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [categories, setCategories] = useState(null);
@@ -129,7 +128,6 @@ function App() {
       
       setArticles(allArticles);
       setCategories(result.categories);
-      setDigest(null);
     } catch (error) {
       console.error('AI sorting error:', error);
       alert('AI sorting failed: ' + error.message);
@@ -174,8 +172,6 @@ function App() {
         onAddFeed={addFeed}
         onDeleteFeed={deleteFeed}
         onSyncFeed={syncFeed}
-        onExport={exportFeeds}
-        onImport={importFeeds}
       />
       <div className="main-content">
         <Toolbar
@@ -190,7 +186,9 @@ function App() {
       </div>
       <SettingsModal 
         isOpen={showSettings} 
-        onClose={() => setShowSettings(false)} 
+        onClose={() => setShowSettings(false)}
+        onExport={exportFeeds}
+        onImport={importFeeds}
       />
     </div>
   );
