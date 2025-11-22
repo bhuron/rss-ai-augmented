@@ -229,26 +229,41 @@ function App() {
   }, [allArticles]);
 
   const sortByAI = async () => {
-    const MAX_ARTICLES = 50;
+    const MAX_ARTICLES = 100;
+    const MAX_PER_FEED = 10;
     
-    if (articles.length > MAX_ARTICLES) {
-      const proceed = confirm(
-        `You have ${articles.length} articles. AI sorting works best with fewer articles.\n\n` +
-        `Sort only the first ${MAX_ARTICLES} articles (most recent)?`
-      );
-      if (!proceed) return;
+    // Balance articles across feeds to prevent high-volume feeds from dominating
+    const articlesByFeed = new Map();
+    articles.forEach(article => {
+      if (!articlesByFeed.has(article.feed_id)) {
+        articlesByFeed.set(article.feed_id, []);
+      }
+      articlesByFeed.get(article.feed_id).push(article);
+    });
+    
+    // Take max 10 articles per feed, then fill up to 100 total
+    let articlesToSort = [];
+    articlesByFeed.forEach(feedArticles => {
+      articlesToSort.push(...feedArticles.slice(0, MAX_PER_FEED));
+    });
+    
+    // If we have room, add more articles from feeds that had more
+    if (articlesToSort.length < MAX_ARTICLES) {
+      const remaining = articles.filter(a => !articlesToSort.includes(a));
+      articlesToSort.push(...remaining.slice(0, MAX_ARTICLES - articlesToSort.length));
+    } else {
+      articlesToSort = articlesToSort.slice(0, MAX_ARTICLES);
     }
+    
+    const remainingArticles = articles.filter(a => !articlesToSort.includes(a));
+    
+    if (articlesToSort.length === 0) return;
     
     // Show loading indicator
     setLoading(true);
     
-    // Immediately show articles in current order so users can start reading
-    // (articles are already displayed, so nothing to do here)
-    
     // Start AI sorting in background
     try {
-      const articlesToSort = articles.slice(0, MAX_ARTICLES);
-      const remainingArticles = articles.slice(MAX_ARTICLES);
       
       const res = await fetch('/api/ai/sort', {
         method: 'POST',
