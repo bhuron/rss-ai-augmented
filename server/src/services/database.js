@@ -73,10 +73,21 @@ export const articleOps = {
     const normalizeUrl = (url) => {
       try {
         const u = new URL(url);
-        // Remove common tracking parameters
-        ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'ref', 'source'].forEach(param => {
-          u.searchParams.delete(param);
-        });
+        // Remove common tracking parameters from various platforms
+        const paramsToRemove = [
+          'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
+          'ref', 'source', 'mc_cid', 'mc_eid', // Mailchimp
+          '_hsenc', '_hsmi', // HubSpot
+          'fbclid', 'gclid', // Facebook/Google
+          'r', 's', 'publication_id', 'post_id', // Substack
+          'v', 't', // Ghost
+          'share', 'doing_wp_cron' // WordPress
+        ];
+        paramsToRemove.forEach(param => u.searchParams.delete(param));
+        
+        // Also normalize the hash (some feeds include timestamps there)
+        u.hash = '';
+        
         return u.toString();
       } catch {
         return url;
@@ -131,32 +142,42 @@ export const articleOps = {
   },
   cleanup: () => {
     const now = new Date();
-    const tenDaysAgo = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000);
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
     
     // Sort articles by date (newest first)
     const sortedArticles = [...db.articles].sort((a, b) => 
       new Date(b.pub_date) - new Date(a.pub_date)
     );
     
-    // Keep the 100 most recent articles
-    const recentIds = new Set(sortedArticles.slice(0, 100).map(a => a.id));
+    // Keep the 200 most recent articles per feed to avoid re-syncing old articles
+    const recentIdsByFeed = new Map();
+    sortedArticles.forEach(article => {
+      if (!recentIdsByFeed.has(article.feed_id)) {
+        recentIdsByFeed.set(article.feed_id, []);
+      }
+      const feedArticles = recentIdsByFeed.get(article.feed_id);
+      if (feedArticles.length < 200) {
+        feedArticles.push(article.id);
+      }
+    });
+    const recentIds = new Set([...recentIdsByFeed.values()].flat());
     
     const beforeCount = db.articles.length;
     db.articles = db.articles.filter(article => {
       // Never delete saved articles
       if (article.is_saved) return true;
       
-      // Always keep if in top 100 most recent
+      // Always keep if in top 200 per feed (prevents re-syncing from RSS)
       if (recentIds.has(article.id)) return true;
       
       const articleDate = new Date(article.pub_date);
       
-      // Delete read articles older than 10 days
-      if (article.is_read && articleDate < tenDaysAgo) return false;
+      // Delete read articles older than 30 days (increased from 10)
+      if (article.is_read && articleDate < thirtyDaysAgo) return false;
       
-      // Delete unread articles older than 30 days
-      if (!article.is_read && articleDate < thirtyDaysAgo) return false;
+      // Delete unread articles older than 60 days (increased from 30)
+      if (!article.is_read && articleDate < sixtyDaysAgo) return false;
       
       // Keep everything else
       return true;
