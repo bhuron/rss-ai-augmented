@@ -69,7 +69,34 @@ export const articleOps = {
     }));
   },
   insert: (feedId, title, link, content, pubDate, imageUrl = null) => {
-    const existing = db.articles.find(a => a.link === link);
+    // Normalize for comparison
+    const normalizeUrl = (url) => {
+      try {
+        const u = new URL(url);
+        // Remove common tracking parameters
+        ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'ref', 'source'].forEach(param => {
+          u.searchParams.delete(param);
+        });
+        return u.toString();
+      } catch {
+        return url;
+      }
+    };
+    
+    const normalizeTitle = (t) => t.trim().toLowerCase().replace(/\s+/g, ' ');
+    
+    const normalizedLink = normalizeUrl(link);
+    const normalizedTitle = normalizeTitle(title);
+    
+    // Check for duplicates by normalized link, or by title+feed if link varies
+    const existing = db.articles.find(a => {
+      const existingLink = normalizeUrl(a.link);
+      const existingTitle = normalizeTitle(a.title);
+      
+      return existingLink === normalizedLink || 
+             (a.feed_id === feedId && existingTitle === normalizedTitle);
+    });
+    
     if (existing) return null;
     
     const article = {

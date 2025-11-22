@@ -12,6 +12,7 @@ function App() {
   const [showUnreadOnly, setShowUnreadOnly] = useState(true);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [categories, setCategories] = useState(null);
 
@@ -128,11 +129,14 @@ function App() {
   };
 
   const syncAllFeeds = async () => {
+    setSyncing(true);
     try {
       await fetch('/api/feeds/sync-all', { method: 'POST' });
-      fetchArticles();
+      await fetchArticles();
     } catch (error) {
       console.error('Failed to sync feeds:', error);
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -164,7 +168,8 @@ function App() {
       body: JSON.stringify({ isRead })
     });
     
-    // Update locally after server confirms
+    // Update locally - keep article in current view even if it no longer matches filter
+    // This prevents jarring disappearances while navigating
     setArticles(prev => prev.map(a => 
       a.id === id ? { ...a, is_read: isRead } : a
     ));
@@ -181,7 +186,7 @@ function App() {
       body: JSON.stringify({ isSaved })
     });
     
-    // Update locally after server confirms
+    // Update locally - keep article in current view
     setArticles(prev => prev.map(a => 
       a.id === id ? { ...a, is_saved: isSaved } : a
     ));
@@ -332,6 +337,13 @@ function App() {
         {loading && (
           <div className="ai-loading-banner">
             AI is analyzing articles... Results will appear when ready.
+          </div>
+        )}
+        {syncing && (
+          <div className="sync-indicator">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 2V5M8 11V14M14 8H11M5 8H2M12.5 12.5L10.5 10.5M10.5 5.5L12.5 3.5M3.5 12.5L5.5 10.5M5.5 5.5L3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
           </div>
         )}
         <ArticleList articles={articles} onMarkAsRead={markAsRead} onToggleSaved={toggleSaved} categories={categories} />

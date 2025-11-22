@@ -111,6 +111,9 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
   }, [articles, categories, selectedIndex, onMarkAsRead]);
 
   useEffect(() => {
+    const markedIds = new Set();
+    const timeouts = new Map();
+    
     // Create intersection observer to detect when articles are scrolled past
     observerRef.current = new IntersectionObserver(
       (entries) => {
@@ -118,13 +121,24 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
           // If article has scrolled past the top of viewport and is unread
           if (entry.boundingClientRect.top < 0 && !entry.isIntersecting) {
             const articleId = parseInt(entry.target.dataset.articleId);
-            const article = articles.find(a => a.id === articleId);
+            const isRead = entry.target.dataset.isRead === 'true';
             
-            if (article && !article.is_read) {
-              // Mark as read after a short delay to ensure they actually scrolled past
-              setTimeout(() => {
+            // Only mark if not already marked and not already read
+            if (!markedIds.has(articleId) && !isRead) {
+              markedIds.add(articleId);
+              
+              // Clear any existing timeout for this article
+              if (timeouts.has(articleId)) {
+                clearTimeout(timeouts.get(articleId));
+              }
+              
+              // Mark as read after a short delay
+              const timeout = setTimeout(() => {
                 onMarkAsRead(articleId, true);
+                timeouts.delete(articleId);
               }, 500);
+              
+              timeouts.set(articleId, timeout);
             }
           }
         });
@@ -146,6 +160,8 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
       if (observerRef.current) {
         observerRef.current.disconnect();
       }
+      // Clear all pending timeouts
+      timeouts.forEach(timeout => clearTimeout(timeout));
     };
   }, [articles, onMarkAsRead]);
 
