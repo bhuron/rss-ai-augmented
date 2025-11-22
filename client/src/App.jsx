@@ -10,9 +10,20 @@ function App() {
   const [allArticles, setAllArticles] = useState([]); // Store all articles for counts
   const [selectedFeed, setSelectedFeed] = useState(null);
   const [showUnreadOnly, setShowUnreadOnly] = useState(true);
+  const [showSavedOnly, setShowSavedOnly] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [categories, setCategories] = useState(null);
+
+  const handleSelectFeed = (feedId) => {
+    setSelectedFeed(feedId);
+    setShowSavedOnly(false);
+  };
+
+  const handleSelectSaved = () => {
+    setSelectedFeed(null);
+    setShowSavedOnly(true);
+  };
 
   useEffect(() => {
     fetchFeeds();
@@ -51,7 +62,7 @@ function App() {
   useEffect(() => {
     fetchArticles();
     setCategories(null); // Clear categories when filter changes
-  }, [selectedFeed, showUnreadOnly]);
+  }, [selectedFeed, showUnreadOnly, showSavedOnly]);
 
   const fetchFeeds = async () => {
     const res = await fetch('/api/feeds');
@@ -62,10 +73,17 @@ function App() {
   const fetchArticles = async () => {
     const params = new URLSearchParams();
     if (selectedFeed) params.append('feedId', selectedFeed);
-    if (showUnreadOnly) params.append('unreadOnly', 'true');
+    // Don't apply unread filter when showing saved articles
+    if (showUnreadOnly && !showSavedOnly) params.append('unreadOnly', 'true');
     
     const res = await fetch(`/api/articles?${params}`);
-    const data = await res.json();
+    let data = await res.json();
+    
+    // Filter for saved articles on client side (always show all saved, read or unread)
+    if (showSavedOnly) {
+      data = data.filter(a => a.is_saved);
+    }
+    
     setArticles(data);
     
     // Also fetch all articles for unread counts
@@ -149,6 +167,23 @@ function App() {
     ));
     setAllArticles(prev => prev.map(a => 
       a.id === id ? { ...a, is_read: isRead } : a
+    ));
+  };
+
+  const toggleSaved = async (id, isSaved) => {
+    // Update server
+    await fetch(`/api/articles/${id}/saved`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isSaved })
+    });
+    
+    // Update locally after server confirms
+    setArticles(prev => prev.map(a => 
+      a.id === id ? { ...a, is_saved: isSaved } : a
+    ));
+    setAllArticles(prev => prev.map(a => 
+      a.id === id ? { ...a, is_saved: isSaved } : a
     ));
   };
 
@@ -272,7 +307,9 @@ function App() {
       <FeedList
         feeds={feeds}
         selectedFeed={selectedFeed}
-        onSelectFeed={setSelectedFeed}
+        showSavedOnly={showSavedOnly}
+        onSelectFeed={handleSelectFeed}
+        onSelectSaved={handleSelectSaved}
         onAddFeed={addFeed}
         onDeleteFeed={deleteFeed}
         onSyncFeed={syncFeed}
@@ -294,7 +331,7 @@ function App() {
             AI is analyzing articles... Results will appear when ready.
           </div>
         )}
-        <ArticleList articles={articles} onMarkAsRead={markAsRead} categories={categories} />
+        <ArticleList articles={articles} onMarkAsRead={markAsRead} onToggleSaved={toggleSaved} categories={categories} />
       </div>
       <SettingsModal 
         isOpen={showSettings} 

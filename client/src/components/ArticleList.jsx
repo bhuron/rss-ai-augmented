@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-function ArticleList({ articles, onMarkAsRead, categories }) {
+function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
   const observerRef = useRef(null);
   const articleRefs = useRef(new Map());
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -97,6 +97,11 @@ function ArticleList({ articles, onMarkAsRead, categories }) {
         e.preventDefault();
         if (currentArticle) {
           onMarkAsRead(currentArticle.id, !currentArticle.is_read);
+        }
+      } else if (e.key === 's') {
+        e.preventDefault();
+        if (currentArticle) {
+          onToggleSaved(currentArticle.id, !currentArticle.is_saved);
         }
       }
     };
@@ -196,6 +201,18 @@ function ArticleList({ articles, onMarkAsRead, categories }) {
             </div>
             <div className="article-actions">
               <button
+                className={`save-btn ${article.is_saved ? 'saved' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleSaved(article.id, !article.is_saved);
+                }}
+                title={article.is_saved ? 'Remove from read later' : 'Read later'}
+              >
+                <svg width="12" height="16" viewBox="0 0 12 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1 0.5C0.723858 0.5 0.5 0.723858 0.5 1V15.5L6 12L11.5 15.5V1C11.5 0.723858 11.2761 0.5 11 0.5H1Z" stroke="currentColor" fill={article.is_saved ? 'currentColor' : 'none'}/>
+                </svg>
+              </button>
+              <button
                 className="mark-read-btn"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -261,6 +278,18 @@ function ArticleList({ articles, onMarkAsRead, categories }) {
                   )}
                 </div>
                 <div className="article-actions">
+                  <button
+                    className={`save-btn ${article.is_saved ? 'saved' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleSaved(article.id, !article.is_saved);
+                    }}
+                    title={article.is_saved ? 'Remove from read later' : 'Read later'}
+                  >
+                    <svg width="12" height="16" viewBox="0 0 12 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M1 0.5C0.723858 0.5 0.5 0.723858 0.5 1V15.5L6 12L11.5 15.5V1C11.5 0.723858 11.2761 0.5 11 0.5H1Z" stroke="currentColor" fill={article.is_saved ? 'currentColor' : 'none'}/>
+                    </svg>
+                  </button>
                   <button
                     className="mark-read-btn"
                     onClick={(e) => {

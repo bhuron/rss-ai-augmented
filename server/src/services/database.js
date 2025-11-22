@@ -81,6 +81,7 @@ export const articleOps = {
       pub_date: pubDate,
       image_url: imageUrl,
       is_read: false,
+      is_saved: false,
       created_at: new Date().toISOString()
     };
     db.articles.push(article);
@@ -91,6 +92,13 @@ export const articleOps = {
     const article = db.articles.find(a => a.id === id);
     if (article) {
       article.is_read = isRead;
+      saveDatabase();
+    }
+  },
+  updateSaved: (id, isSaved) => {
+    const article = db.articles.find(a => a.id === id);
+    if (article) {
+      article.is_saved = isSaved;
       saveDatabase();
     }
   },
@@ -109,6 +117,9 @@ export const articleOps = {
     
     const beforeCount = db.articles.length;
     db.articles = db.articles.filter(article => {
+      // Never delete saved articles
+      if (article.is_saved) return true;
+      
       // Always keep if in top 100 most recent
       if (recentIds.has(article.id)) return true;
       

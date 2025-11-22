@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function FeedList({ feeds, selectedFeed, onSelectFeed, onAddFeed, onDeleteFeed, onSyncFeed, onRenameFeed, unreadCounts }) {
+function FeedList({ feeds, selectedFeed, showSavedOnly, onSelectFeed, onSelectSaved, onAddFeed, onDeleteFeed, onSyncFeed, onRenameFeed, unreadCounts }) {
   const [newFeedUrl, setNewFeedUrl] = useState('');
   const [editingFeedId, setEditingFeedId] = useState(null);
   const [editingTitle, setEditingTitle] = useState('');
@@ -29,13 +29,19 @@ function FeedList({ feeds, selectedFeed, onSelectFeed, onAddFeed, onDeleteFeed, 
       </div>
       <div className="feed-list">
         <div
-          className={`feed-item all-feeds ${selectedFeed === null ? 'active' : ''}`}
+          className={`feed-item all-feeds ${selectedFeed === null && !showSavedOnly ? 'active' : ''}`}
           onClick={() => onSelectFeed(null)}
         >
           <span>All Feeds</span>
           {unreadCounts.total > 0 && (
             <span className="unread-count">{unreadCounts.total}</span>
           )}
+        </div>
+        <div
+          className={`feed-item saved-feeds ${showSavedOnly ? 'active' : ''}`}
+          onClick={onSelectSaved}
+        >
+          <span>Read Later</span>
         </div>
         {feeds.map(feed => (
           <div

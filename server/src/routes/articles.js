@@ -18,4 +18,10 @@ router.patch('/:id/read', (req, res) => {
   res.json({ success: true });
 });
 
+router.patch('/:id/saved', (req, res) => {
+  const { isSaved } = req.body;
+  articleOps.updateSaved(parseInt(req.params.id), isSaved);
+  res.json({ success: true });
+});
+
 export default router;

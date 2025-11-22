@@ -803,3 +803,59 @@ body {
   font-size: 12px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
+
+.save-btn {
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  opacity: 0;
+  padding: 0;
+  color: #ccc;
+}
+
+.save-btn svg {
+  transition: all 0.15s;
+}
+
+.article-card:hover .save-btn {
+  opacity: 0.3;
+}
+
+.save-btn:hover {
+  opacity: 1 !important;
+  color: #666;
+}
+
+.save-btn.saved {
+  opacity: 0.5;
+  color: #666;
+}
+
+.article-card:hover .save-btn.saved {
+  opacity: 0.7;
+}
+
+.save-btn.saved:hover {
+  opacity: 1 !important;
+  color: #555;
+}
+
+.icon-btn.active {
+  color: #333;
+}
+
+.feed-item.saved-feeds::before {
+  background: #666;
+  width: 10px;
+  height: 10px;
+}
+
+.feed-item.saved-feeds.active::before {
+  background: #007bff;
+}

@@ -11,6 +11,7 @@ An intelligent RSS reader that uses AI to sort and digest articles.
 - Collapsible sidebar with hover interaction
 - Keyboard shortcuts for navigation
 - Unread article tracking
+- Read later / bookmarking
 - OPML import/export
 
 ## Setup
@@ -60,6 +61,7 @@ All configuration is done through the web UI - no environment variables needed!
 - `Enter` / `o` - Open article in new tab (marks as read)
 - `v` - Open article without marking as read
 - `m` - Toggle read/unread status
+- `s` - Add/remove article from read later
 - `c` - Clear categories and return to chronological view
 - `r` - Refresh all feeds
 

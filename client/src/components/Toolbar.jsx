@@ -19,6 +19,7 @@ function Toolbar({ onSortByAI, onToggleUnread, showUnreadOnly, hasArticles, onOp
         >
           {showUnreadOnly ? '👁️' : '👁️‍🗨️'}
         </button>
+
         <button 
           onClick={onMarkAllAsRead} 
           disabled={!hasUnread}
