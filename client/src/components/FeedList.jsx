@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function FeedList({ feeds, selectedFeed, showSavedOnly, onSelectFeed, onSelectSaved, onAddFeed, onDeleteFeed, onSyncFeed, onRenameFeed, unreadCounts }) {
+function FeedList({ feeds, selectedFeed, showSavedOnly, onSelectFeed, onSelectSaved, onAddFeed, onDeleteFeed, onSyncFeed, onRenameFeed, unreadCounts, sidebarOpen, onCloseSidebar }) {
   const [newFeedUrl, setNewFeedUrl] = useState('');
   const [editingFeedId, setEditingFeedId] = useState(null);
   const [editingTitle, setEditingTitle] = useState('');
@@ -13,7 +13,9 @@ function FeedList({ feeds, selectedFeed, showSavedOnly, onSelectFeed, onSelectSa
   };
 
   return (
-    <div className="sidebar">
+    <>
+      {sidebarOpen && <div className="sidebar-overlay" onClick={onCloseSidebar} />}
+      <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
       <div className="sidebar-header">
         <h1>RSS Feeds</h1>
         <div className="add-feed">
@@ -98,6 +100,7 @@ function FeedList({ feeds, selectedFeed, showSavedOnly, onSelectFeed, onSelectSa
         ))}
       </div>
     </div>
+    </>
   );
 }
 

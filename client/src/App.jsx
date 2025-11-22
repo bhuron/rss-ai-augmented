@@ -15,6 +15,7 @@ function App() {
   const [syncing, setSyncing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [categories, setCategories] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleSelectFeed = (feedId) => {
     setSelectedFeed(feedId);
@@ -312,17 +313,32 @@ function App() {
 
   return (
     <div className="app">
+      <button 
+        className="mobile-menu-btn"
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        aria-label="Toggle menu"
+      >
+        ☰
+      </button>
       <FeedList
         feeds={feeds}
         selectedFeed={selectedFeed}
         showSavedOnly={showSavedOnly}
-        onSelectFeed={handleSelectFeed}
-        onSelectSaved={handleSelectSaved}
+        onSelectFeed={(feedId) => {
+          handleSelectFeed(feedId);
+          setSidebarOpen(false);
+        }}
+        onSelectSaved={() => {
+          handleSelectSaved();
+          setSidebarOpen(false);
+        }}
         onAddFeed={addFeed}
         onDeleteFeed={deleteFeed}
         onSyncFeed={syncFeed}
         onRenameFeed={renameFeed}
         unreadCounts={unreadCounts}
+        sidebarOpen={sidebarOpen}
+        onCloseSidebar={() => setSidebarOpen(false)}
       />
       <div className="main-content">
         <Toolbar
