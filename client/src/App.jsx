@@ -50,6 +50,9 @@ function App() {
       } else if (e.key === 'r') {
         e.preventDefault();
         syncAllFeeds();
+      } else if (e.key === 'a') {
+        e.preventDefault();
+        handleSelectFeed(null);
       }
     };
 
