@@ -31,6 +31,20 @@ npm run dev
 
 Open http://localhost:5173 and click the ⚙️ Settings button to configure your LLM provider.
 
+### Optional: Enable Basic Authentication
+
+To password-protect your app when deploying:
+
+1. Create a `.env` file in the `server` directory (copy from `.env.example`)
+2. Set your credentials:
+```
+BASIC_AUTH_USER=yourusername
+BASIC_AUTH_PASSWORD=yourpassword
+```
+3. Restart the server
+
+Leave these empty for local development without authentication.
+
 ## Supported LLM Providers
 - **OpenAI** (GPT-4, GPT-3.5, etc.)
 - **Anthropic** (Claude 3.5 Sonnet, etc.)

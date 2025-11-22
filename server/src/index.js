@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import basicAuth from 'express-basic-auth';
 import { initDatabase, articleOps } from './services/database.js';
 import feedRoutes from './routes/feeds.js';
 import articleRoutes from './routes/articles.js';
@@ -14,6 +15,16 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+// Basic authentication
+if (process.env.BASIC_AUTH_USER && process.env.BASIC_AUTH_PASSWORD) {
+  app.use(basicAuth({
+    users: { [process.env.BASIC_AUTH_USER]: process.env.BASIC_AUTH_PASSWORD },
+    challenge: true,
+    realm: 'RSS + LLM Reader'
+  }));
+  console.log('Basic authentication enabled');
+}
 
 // Initialize database
 initDatabase();
