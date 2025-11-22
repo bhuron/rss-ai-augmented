@@ -1,11 +1,41 @@
 import Parser from 'rss-parser';
 import { articleOps } from './database.js';
+import fetch from 'node-fetch';
+import iconv from 'iconv-lite';
 
-const parser = new Parser();
+const parser = new Parser({
+  customFields: {
+    item: ['media:content', 'media:thumbnail']
+  }
+});
 
 export async function fetchFeed(feedUrl) {
-  const feed = await parser.parseURL(feedUrl);
-  return feed;
+  try {
+    // Fetch the feed manually to handle encoding properly
+    const response = await fetch(feedUrl);
+    const buffer = await response.arrayBuffer();
+    
+    // Try to detect encoding from Content-Type header
+    const contentType = response.headers.get('content-type') || '';
+    let encoding = 'utf-8';
+    
+    const charsetMatch = contentType.match(/charset=([^;]+)/i);
+    if (charsetMatch) {
+      encoding = charsetMatch[1].trim();
+    }
+    
+    // Decode the buffer with the correct encoding
+    const xmlString = iconv.decode(Buffer.from(buffer), encoding);
+    
+    // Parse the decoded XML
+    const feed = await parser.parseString(xmlString);
+    return feed;
+  } catch (error) {
+    console.error('Error fetching feed:', error);
+    // Fallback to default parser
+    const feed = await parser.parseURL(feedUrl);
+    return feed;
+  }
 }
 
 export async function syncFeed(feedId, feedUrl) {

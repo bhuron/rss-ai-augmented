@@ -20,7 +20,7 @@ function loadDatabase() {
 }
 
 function saveDatabase() {
-  fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
+  fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf8');
 }
 
 export function initDatabase() {
