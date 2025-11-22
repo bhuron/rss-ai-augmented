@@ -263,10 +263,15 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
               <h2>{category.name}</h2>
               <p>{category.description}</p>
             </div>
-            {categoryArticles.map(article => (
+            {categoryArticles.map((article, articleIndex) => (
               <div
-                key={article.id}
-                ref={(el) => setArticleRef(article.id, el)}
+                key={`${catIndex}-${article.id}`}
+                ref={(el) => {
+                  // Only set ref for the first occurrence of each article
+                  if (!articleRefs.current.has(article.id)) {
+                    setArticleRef(article.id, el);
+                  }
+                }}
                 data-article-id={article.id}
                 data-is-read={article.is_read}
                 className={`article-card ${article.is_read ? 'read' : ''} ${articleIndexMap.get(article.id) === selectedIndex ? 'selected' : ''}`}
