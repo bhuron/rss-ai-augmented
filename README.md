@@ -47,6 +47,7 @@ All configuration is done through the web UI - no environment variables needed!
 - `v` - Open article without marking as read
 - `m` - Toggle read/unread status
 - `c` - Clear categories and return to chronological view
+- `r` - Refresh all feeds
 
 ## License
 

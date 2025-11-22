@@ -27,7 +27,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // Global keyboard shortcut to clear categories
+    // Global keyboard shortcuts
     const handleKeyDown = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       
@@ -36,6 +36,9 @@ function App() {
         setCategories(null);
         // Re-fetch to get chronological order
         fetchArticles();
+      } else if (e.key === 'r') {
+        e.preventDefault();
+        syncAllFeeds();
       }
     };
 
