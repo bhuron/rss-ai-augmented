@@ -133,9 +133,9 @@ function App() {
     setSyncing(true);
     try {
       await fetch('/api/feeds/sync-all', { method: 'POST' });
-      // Clear current articles before fetching to ensure filters are applied fresh
-      setArticles([]);
       await fetchArticles();
+      // Clear categories on refresh
+      setCategories(null);
     } catch (error) {
       console.error('Failed to sync feeds:', error);
     } finally {
