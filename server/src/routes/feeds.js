@@ -107,20 +107,23 @@ router.post('/import', async (req, res) => {
 
 router.post('/sync-all', async (req, res) => {
   const feeds = feedOps.all();
-  let synced = 0;
-  let failed = 0;
   
-  console.log(`Syncing ${feeds.length} feeds...`);
+  console.log(`Syncing ${feeds.length} feeds in parallel...`);
   
-  for (const feed of feeds) {
-    try {
-      await syncFeed(feed.id, feed.url);
-      synced++;
-    } catch (error) {
-      console.error(`Failed to sync ${feed.title}:`, error.message);
-      failed++;
+  // Sync all feeds in parallel for much faster refresh
+  const results = await Promise.allSettled(
+    feeds.map(feed => syncFeed(feed.id, feed.url))
+  );
+  
+  const synced = results.filter(r => r.status === 'fulfilled').length;
+  const failed = results.filter(r => r.status === 'rejected').length;
+  
+  // Log any failures
+  results.forEach((result, index) => {
+    if (result.status === 'rejected') {
+      console.error(`Failed to sync ${feeds[index].title}:`, result.reason.message);
     }
-  }
+  });
   
   console.log(`Sync complete: ${synced} succeeded, ${failed} failed`);
   res.json({ synced, failed, total: feeds.length });
