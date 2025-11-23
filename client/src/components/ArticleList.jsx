@@ -275,16 +275,17 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
                 if (validArticles.length === 1) {
                   const article = validArticles[0];
                   return (
-                    <a
-                      key={i}
-                      href={article.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="digest-article-link"
-                      title={article.title}
-                    >
-                      🔗
-                    </a>
+                    <span key={i} className="digest-article-tooltip">
+                      <a
+                        href={article.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="digest-article-link"
+                      >
+                        🔗
+                      </a>
+                      <span className="digest-tooltip-text">{article.title}</span>
+                    </span>
                   );
                 }
                 
@@ -292,16 +293,17 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
                 return (
                   <span key={i} className="digest-article-group">
                     {validArticles.map((article, idx) => (
-                      <a
-                        key={article.id}
-                        href={article.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="digest-article-number"
-                        title={article.title}
-                      >
-                        [{idx + 1}]
-                      </a>
+                      <span key={article.id} className="digest-article-tooltip">
+                        <a
+                          href={article.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="digest-article-number"
+                        >
+                          [{idx + 1}]
+                        </a>
+                        <span className="digest-tooltip-text">{article.title}</span>
+                      </span>
                     ))}
                   </span>
                 );
