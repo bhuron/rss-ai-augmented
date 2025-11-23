@@ -52,6 +52,11 @@ app.get('/api/image-proxy', async (req, res) => {
     return res.status(400).send('Missing url parameter');
   }
   
+  // Skip relative URLs silently
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return res.status(404).send('Not found');
+  }
+  
   try {
     const response = await fetch(url, {
       headers: {
@@ -75,7 +80,7 @@ app.get('/api/image-proxy', async (req, res) => {
     const buffer = await response.arrayBuffer();
     res.send(Buffer.from(buffer));
   } catch (error) {
-    console.error('Image proxy error:', error);
+    // Silently fail - image will just not display
     res.status(500).send('Failed to proxy image');
   }
 });
