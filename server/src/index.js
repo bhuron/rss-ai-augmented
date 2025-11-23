@@ -44,6 +44,42 @@ setInterval(() => {
   articleOps.cleanup();
 }, 24 * 60 * 60 * 1000); // Every 24 hours
 
+// Image proxy to bypass CORS/hotlinking restrictions
+app.get('/api/image-proxy', async (req, res) => {
+  const { url } = req.query;
+  
+  if (!url) {
+    return res.status(400).send('Missing url parameter');
+  }
+  
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': new URL(url).origin
+      }
+    });
+    
+    if (!response.ok) {
+      return res.status(response.status).send('Failed to fetch image');
+    }
+    
+    const contentType = response.headers.get('content-type');
+    if (contentType) {
+      res.setHeader('Content-Type', contentType);
+    }
+    
+    // Cache for 1 day
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    
+    const buffer = await response.arrayBuffer();
+    res.send(Buffer.from(buffer));
+  } catch (error) {
+    console.error('Image proxy error:', error);
+    res.status(500).send('Failed to proxy image');
+  }
+});
+
 // Routes
 app.use('/api/feeds', feedRoutes);
 app.use('/api/articles', articleRoutes);

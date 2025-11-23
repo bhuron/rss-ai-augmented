@@ -213,10 +213,9 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
               </div>
               {article.image_url && (
                 <img 
-                  src={article.image_url} 
+                  src={`/api/image-proxy?url=${encodeURIComponent(article.image_url)}`}
                   alt="" 
                   className="article-image" 
-                  referrerPolicy="no-referrer"
                   onError={(e) => e.target.style.display = 'none'}
                 />
               )}
@@ -302,10 +301,9 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
                   </div>
                   {article.image_url && (
                     <img 
-                      src={article.image_url} 
+                      src={`/api/image-proxy?url=${encodeURIComponent(article.image_url)}`}
                       alt="" 
                       className="article-image" 
-                      referrerPolicy="no-referrer"
                       onError={(e) => e.target.style.display = 'none'}
                     />
                   )}
