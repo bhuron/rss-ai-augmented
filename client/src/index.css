@@ -1057,43 +1057,44 @@ body {
 
 /* Digest Section */
 .digest-section {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .digest-header {
-  background: #fafafa;
-  border: 1px solid #e8e8e8;
-  padding: 20px 24px;
-  border-radius: 6px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  padding: 24px 28px;
+  border-radius: 8px;
 }
 
 .digest-header h2 {
-  font-size: 15px;
-  font-weight: 600;
-  color: #666;
-  margin-bottom: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6c757d;
+  margin-bottom: 16px;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-size: 12px;
+  letter-spacing: 0.1em;
 }
 
 .digest-content {
-  font-size: 14px;
-  line-height: 1.6;
-  color: #444;
+  font-size: 15px;
+  line-height: 1.75;
+  color: #2c3e50;
   white-space: pre-wrap;
+  font-weight: 400;
 }
 
 .digest-article-link {
   text-decoration: none;
-  font-size: 14px;
-  opacity: 0.5;
-  transition: opacity 0.2s;
-  margin: 0 2px;
+  font-size: 16px;
+  opacity: 0.4;
+  transition: opacity 0.15s;
+  margin: 0 3px;
+  cursor: pointer;
 }
 
 .digest-article-link:hover {
-  opacity: 1;
+  opacity: 0.8;
 }
 
 .digest-article-group {
@@ -1102,17 +1103,18 @@ body {
 }
 
 .digest-article-number {
-  color: #2563eb;
+  color: #6c757d;
   text-decoration: none;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  margin: 0 2px;
-  transition: all 0.2s;
+  margin: 0 1px;
+  transition: all 0.15s;
+  opacity: 0.6;
 }
 
 .digest-article-number:hover {
-  color: #1d4ed8;
-  text-decoration: underline;
+  opacity: 1;
+  color: #495057;
 }
 
 .digest-article-tooltip {
