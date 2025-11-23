@@ -212,7 +212,7 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
                 </div>
               </div>
               {article.image_url && (
-                <img src={article.image_url} alt="" className="article-image" />
+                <img src={article.image_url} alt="" className="article-image" referrerPolicy="no-referrer" />
               )}
             </div>
             <div className="article-actions">
@@ -295,7 +295,7 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
                     </div>
                   </div>
                   {article.image_url && (
-                    <img src={article.image_url} alt="" className="article-image" />
+                    <img src={article.image_url} alt="" className="article-image" referrerPolicy="no-referrer" />
                   )}
                 </div>
                 <div className="article-actions">

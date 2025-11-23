@@ -30,14 +30,16 @@ function App() {
   useEffect(() => {
     fetchFeeds();
     syncAllFeeds(); // Sync on app load
-    
+  }, []);
+
+  useEffect(() => {
     // Auto-refresh every 15 minutes
     const interval = setInterval(() => {
       syncAllFeeds();
     }, 15 * 60 * 1000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedFeed, showUnreadOnly, showSavedOnly]); // Recreate interval when filters change
 
   useEffect(() => {
     // Global keyboard shortcuts
@@ -87,6 +89,11 @@ function App() {
     // Filter for saved articles on client side (always show all saved, read or unread)
     if (showSavedOnly) {
       data = data.filter(a => a.is_saved);
+    }
+    
+    // Double-check client-side filtering to ensure no wrong articles slip through
+    if (selectedFeed) {
+      data = data.filter(a => a.feed_id === selectedFeed);
     }
     
     setArticles(data);
