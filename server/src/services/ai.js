@@ -101,8 +101,9 @@ export async function sortArticles(config, articles, criteria = 'relevance and i
 Articles:
 ${articleList}
 
-Return a JSON object with categories and sorted article IDs:
+Return a JSON object with a digest and categories:
 {
+  "digest": "2-3 paragraph executive summary covering: key themes/trends, notable highlights, brief summary of each category. When mentioning specific articles, reference them as [ID:123] inline.",
   "categories": [
     {"name": "Category Name", "description": "Brief reason", "articleIds": [1, 2]}
   ],
@@ -113,7 +114,9 @@ IMPORTANT:
 - Use the numeric IDs from "ID:xxx"
 - Include ALL ${articles.length} article IDs in sortedIds
 - Create 3-5 meaningful categories
-- Keep descriptions under 80 characters`;
+- Keep category descriptions under 80 characters
+- Write digest in conversational, executive summary style
+- Reference major articles in digest using [ID:123] format`;
 
   try {
     const content = await callLLM(config, [{ role: 'user', content: prompt }], 0.2);
@@ -149,9 +152,20 @@ IMPORTANT:
     
     console.log(`Sorted ${sortedArticles.length} articles into ${result.categories?.length || 0} categories`);
     
+    // Add digest as first "category" if present
+    const categories = result.categories || [];
+    if (result.digest) {
+      categories.unshift({
+        name: "Daily Digest",
+        description: result.digest,
+        articleIds: [],
+        isDigest: true
+      });
+    }
+    
     return {
       articles: sortedArticles,
-      categories: result.categories || []
+      categories: categories
     };
   } catch (error) {
     console.error('Error in sortArticles:', error);

@@ -256,6 +256,72 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
   return (
     <div className="article-list">
       {categories.map((category, catIndex) => {
+        // Special rendering for digest
+        if (category.isDigest) {
+          // Convert [ID:123] or [ID:123, ID:456, ID:789] references to clickable links
+          const renderDigestWithLinks = (text) => {
+            // Match both single [ID:123] and multiple [ID:123, ID:456, ...]
+            const parts = text.split(/(\[(?:ID:\d+(?:,\s*)?)+\])/g);
+            return parts.map((part, i) => {
+              // Check if this is an ID reference block
+              if (part.startsWith('[ID:')) {
+                // Extract all IDs from the block
+                const ids = [...part.matchAll(/ID:(\d+)/g)].map(m => parseInt(m[1]));
+                const validArticles = ids.map(id => articleMap.get(id)).filter(a => a);
+                
+                if (validArticles.length === 0) return <span key={i}>{part}</span>;
+                
+                // Single article: show as subtle link indicator
+                if (validArticles.length === 1) {
+                  const article = validArticles[0];
+                  return (
+                    <a
+                      key={i}
+                      href={article.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="digest-article-link"
+                      title={article.title}
+                    >
+                      🔗
+                    </a>
+                  );
+                }
+                
+                // Multiple articles: show as compact numbered list
+                return (
+                  <span key={i} className="digest-article-group">
+                    {validArticles.map((article, idx) => (
+                      <a
+                        key={article.id}
+                        href={article.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="digest-article-number"
+                        title={article.title}
+                      >
+                        [{idx + 1}]
+                      </a>
+                    ))}
+                  </span>
+                );
+              }
+              return <span key={i}>{part}</span>;
+            });
+          };
+          
+          return (
+            <div key="digest" className="category-section digest-section">
+              <div className="category-header digest-header">
+                <h2>{category.name}</h2>
+                <div className="digest-content">
+                  {renderDigestWithLinks(category.description)}
+                </div>
+              </div>
+            </div>
+          );
+        }
+        
         const categoryArticles = category.articleIds
           .map(id => articleMap.get(id))
           .filter(a => a !== undefined);
