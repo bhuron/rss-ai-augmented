@@ -212,7 +212,13 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
                 </div>
               </div>
               {article.image_url && (
-                <img src={article.image_url} alt="" className="article-image" referrerPolicy="no-referrer" />
+                <img 
+                  src={article.image_url} 
+                  alt="" 
+                  className="article-image" 
+                  referrerPolicy="no-referrer"
+                  onError={(e) => e.target.style.display = 'none'}
+                />
               )}
             </div>
             <div className="article-actions">
@@ -295,7 +301,13 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
                     </div>
                   </div>
                   {article.image_url && (
-                    <img src={article.image_url} alt="" className="article-image" referrerPolicy="no-referrer" />
+                    <img 
+                      src={article.image_url} 
+                      alt="" 
+                      className="article-image" 
+                      referrerPolicy="no-referrer"
+                      onError={(e) => e.target.style.display = 'none'}
+                    />
                   )}
                 </div>
                 <div className="article-actions">
