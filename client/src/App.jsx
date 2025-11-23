@@ -49,8 +49,23 @@ function App() {
       if (e.key === 'c' && categories) {
         e.preventDefault();
         setCategories(null);
-        // Re-fetch to get chronological order
-        fetchArticles();
+        // Re-fetch to restore chronological order
+        const params = new URLSearchParams();
+        if (selectedFeed) params.append('feedId', selectedFeed);
+        if (showUnreadOnly && !showSavedOnly) params.append('unreadOnly', 'true');
+        
+        fetch(`/api/articles?${params}`)
+          .then(res => res.json())
+          .then(data => {
+            let filtered = data;
+            if (showSavedOnly) {
+              filtered = data.filter(a => a.is_saved);
+            }
+            if (selectedFeed) {
+              filtered = filtered.filter(a => a.feed_id === selectedFeed);
+            }
+            setArticles(filtered);
+          });
       } else if (e.key === 'r') {
         e.preventDefault();
         syncAllFeeds();
@@ -62,7 +77,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [categories]);
+  }, [categories, selectedFeed, showUnreadOnly, showSavedOnly]);
 
 
 
