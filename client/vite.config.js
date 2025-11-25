@@ -6,8 +6,16 @@ export default defineConfig({
   server: {
     port: 5173,
     host: '0.0.0.0', // Listen on all network interfaces
+    allowedHosts: [
+      'localhost',
+      '.ts.net', // Allow all Tailscale hostnames
+    ],
     proxy: {
-      '/api': 'http://localhost:3000'
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      }
     }
   }
 });

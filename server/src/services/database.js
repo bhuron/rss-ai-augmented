@@ -8,14 +8,30 @@ let db = {
   feeds: [],
   articles: [],
   settings: {},
+  users: [],
+  credentials: [],
   nextFeedId: 1,
-  nextArticleId: 1
+  nextArticleId: 1,
+  nextUserId: 1,
+  nextCredentialId: 1
 };
 
 function loadDatabase() {
   if (fs.existsSync(DB_FILE)) {
     const data = fs.readFileSync(DB_FILE, 'utf8');
-    db = JSON.parse(data);
+    const loaded = JSON.parse(data);
+    // Merge with defaults to ensure all fields exist
+    db = {
+      feeds: loaded.feeds || [],
+      articles: loaded.articles || [],
+      settings: loaded.settings || {},
+      users: loaded.users || [],
+      credentials: loaded.credentials || [],
+      nextFeedId: loaded.nextFeedId || 1,
+      nextArticleId: loaded.nextArticleId || 1,
+      nextUserId: loaded.nextUserId || 1,
+      nextCredentialId: loaded.nextCredentialId || 1
+    };
   }
 }
 
@@ -212,3 +228,56 @@ export const settingsOps = {
 };
 
 export default { feedOps, articleOps, settingsOps };
+
+// User operations
+export const userOps = {
+  all: () => db.users,
+  get: (id) => db.users.find(u => u.id === id),
+  getByUsername: (username) => db.users.find(u => u.username === username),
+  insert: (username, idBuffer) => {
+    const user = {
+      id: `user_${db.nextUserId++}`,
+      username,
+      idBuffer: Array.from(idBuffer), // Store as array for JSON serialization
+      created_at: new Date().toISOString()
+    };
+    db.users.push(user);
+    saveDatabase();
+    return user;
+  },
+  delete: (id) => {
+    db.users = db.users.filter(u => u.id !== id);
+    db.credentials = db.credentials.filter(c => c.user_id !== id);
+    saveDatabase();
+  }
+};
+
+// Credential operations
+export const credentialOps = {
+  getByUserId: (userId) => db.credentials.filter(c => c.user_id === userId),
+  getById: (credId) => db.credentials.find(c => c.id === credId),
+  insert: (userId, credentialData) => {
+    const credential = {
+      id: credentialData.id,
+      user_id: userId,
+      publicKey: Array.from(credentialData.publicKey), // Store as array
+      counter: credentialData.counter,
+      transports: credentialData.transports,
+      created_at: new Date().toISOString()
+    };
+    db.credentials.push(credential);
+    saveDatabase();
+    return credential;
+  },
+  updateCounter: (credId, newCounter) => {
+    const cred = db.credentials.find(c => c.id === credId);
+    if (cred) {
+      cred.counter = newCounter;
+      saveDatabase();
+    }
+  },
+  delete: (credId) => {
+    db.credentials = db.credentials.filter(c => c.id !== credId);
+    saveDatabase();
+  }
+};

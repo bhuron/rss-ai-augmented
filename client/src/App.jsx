@@ -3,8 +3,12 @@ import FeedList from './components/FeedList';
 import ArticleList from './components/ArticleList';
 import Toolbar from './components/Toolbar';
 import SettingsModal from './components/SettingsModal';
+import Login from './components/Login';
 
 function App() {
+  const [authenticated, setAuthenticated] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [username, setUsername] = useState('');
   const [feeds, setFeeds] = useState([]);
   const [articles, setArticles] = useState([]);
   const [allArticles, setAllArticles] = useState([]); // Store all articles for counts
@@ -28,9 +32,27 @@ function App() {
   };
 
   useEffect(() => {
-    fetchFeeds();
-    syncAllFeeds(); // Sync on app load
+    // Check if user is authenticated
+    fetch('/api/auth/current-user', {
+      credentials: 'include'
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.authenticated) {
+          setAuthenticated(true);
+          setUsername(data.username);
+        }
+        setCheckingAuth(false);
+      })
+      .catch(() => setCheckingAuth(false));
   }, []);
+
+  useEffect(() => {
+    if (authenticated) {
+      fetchFeeds();
+      syncAllFeeds(); // Sync on app load
+    }
+  }, [authenticated]);
 
   useEffect(() => {
     // Auto-refresh every 15 minutes
@@ -349,6 +371,23 @@ function App() {
     }
     setLoading(false);
   };
+
+  const handleLoginSuccess = (user) => {
+    setUsername(user);
+    setAuthenticated(true);
+  };
+
+  if (checkingAuth) {
+    return (
+      <div className="app" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+        <div>Loading...</div>
+      </div>
+    );
+  }
+
+  if (!authenticated) {
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
 
   return (
     <div className="app">
