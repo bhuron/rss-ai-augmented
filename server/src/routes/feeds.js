@@ -14,7 +14,9 @@ router.post('/', async (req, res) => {
   
   try {
     const feed = await fetchFeed(url);
-    const newFeed = feedOps.insert(feed.title, url);
+    // Fallback to URL hostname if title is empty
+    const title = feed.title?.trim() || new URL(url).hostname;
+    const newFeed = feedOps.insert(title, url);
     
     await syncFeed(newFeed.id, url);
     

@@ -51,10 +51,15 @@ export async function syncFeed(feedId, feedUrl) {
       imageUrl = item['media:content'].$.url;
     } else if (item['media:thumbnail'] && item['media:thumbnail'].$ && item['media:thumbnail'].$.url) {
       imageUrl = item['media:thumbnail'].$.url;
-    } else if (item.content) {
-      // Try to extract first image from HTML content
-      const imgMatch = item.content.match(/<img[^>]+src="([^">]+)"/);
-      if (imgMatch) imageUrl = imgMatch[1];
+    } else {
+      // Try to extract first image from HTML content (check multiple fields)
+      const contentToCheck = item['content:encoded'] || item.content || item.description || '';
+      if (contentToCheck) {
+        const imgMatch = contentToCheck.match(/<img[^>]+src=["']([^"'>]+)["']/i);
+        if (imgMatch) {
+          imageUrl = imgMatch[1];
+        }
+      }
     }
     
     const article = articleOps.insert(
