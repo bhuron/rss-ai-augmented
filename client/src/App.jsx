@@ -29,7 +29,10 @@ function App() {
 
   useEffect(() => {
     fetchFeeds();
-    syncAllFeeds(); // Sync on app load
+    // Sync on app load and refresh articles after
+    syncAllFeeds().then(() => {
+      fetchArticles();
+    });
   }, []);
 
   useEffect(() => {
@@ -43,7 +46,7 @@ function App() {
 
   useEffect(() => {
     // Global keyboard shortcuts
-    const handleKeyDown = (e) => {
+    const handleKeyDown = async (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       
       if (e.key === 'c' && categories) {
@@ -68,7 +71,9 @@ function App() {
           });
       } else if (e.key === 'r') {
         e.preventDefault();
-        syncAllFeeds();
+        await syncAllFeeds();
+        // Refresh the current view after sync completes
+        fetchArticles();
       } else if (e.key === 'a') {
         e.preventDefault();
         handleSelectFeed(null);
