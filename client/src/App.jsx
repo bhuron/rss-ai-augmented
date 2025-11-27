@@ -72,6 +72,9 @@ function App() {
       } else if (e.key === 'a') {
         e.preventDefault();
         handleSelectFeed(null);
+      } else if (e.key === 'l') {
+        e.preventDefault();
+        handleSelectSaved();
       }
     };
 
