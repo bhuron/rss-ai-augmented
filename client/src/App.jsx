@@ -155,9 +155,13 @@ function App() {
     setSyncing(true);
     try {
       await fetch('/api/feeds/sync-all', { method: 'POST' });
-      await fetchArticles();
-      // Clear categories on refresh
-      setCategories(null);
+      
+      // Only update unread counts silently, don't change the current article list
+      const allRes = await fetch('/api/articles');
+      const allData = await allRes.json();
+      setAllArticles(allData);
+      
+      // Don't update articles or clear categories - keep current view intact
     } catch (error) {
       console.error('Failed to sync feeds:', error);
     } finally {
