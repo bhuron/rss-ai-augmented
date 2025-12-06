@@ -42,23 +42,52 @@ export async function syncFeed(feedId, feedUrl) {
   const feed = await fetchFeed(feedUrl);
   
   let newCount = 0;
+  let skippedCount = 0;
+  let duplicateCount = 0;
+  
   for (const item of feed.items) {
+    // Skip YouTube Shorts (can be disabled by setting INCLUDE_SHORTS=true in .env)
+    if (item.link && item.link.includes('/shorts/') && process.env.INCLUDE_SHORTS !== 'true') {
+      skippedCount++;
+      continue;
+    }
     // Extract image from various RSS fields
     let imageUrl = null;
-    if (item.enclosure && item.enclosure.type?.startsWith('image/')) {
-      imageUrl = item.enclosure.url;
-    } else if (item['media:content'] && item['media:content'].$ && item['media:content'].$.url) {
+    
+    // Check media:group (YouTube uses this)
+    if (item['media:group'] && item['media:group']['media:thumbnail']) {
+      const thumbnail = item['media:group']['media:thumbnail'];
+      imageUrl = thumbnail.$ ? thumbnail.$.url : thumbnail;
+    }
+    // Check media:thumbnail directly
+    else if (item['media:thumbnail']) {
+      const thumbnail = item['media:thumbnail'];
+      imageUrl = thumbnail.$ ? thumbnail.$.url : thumbnail;
+    }
+    // Check media:content
+    else if (item['media:content'] && item['media:content'].$ && item['media:content'].$.url) {
       imageUrl = item['media:content'].$.url;
-    } else if (item['media:thumbnail'] && item['media:thumbnail'].$ && item['media:thumbnail'].$.url) {
-      imageUrl = item['media:thumbnail'].$.url;
-    } else {
-      // Try to extract first image from HTML content (check multiple fields)
+    }
+    // Check enclosure
+    else if (item.enclosure && item.enclosure.type?.startsWith('image/')) {
+      imageUrl = item.enclosure.url;
+    }
+    // Extract from HTML content
+    else {
       const contentToCheck = item['content:encoded'] || item.content || item.description || '';
       if (contentToCheck) {
         const imgMatch = contentToCheck.match(/<img[^>]+src=["']([^"'>]+)["']/i);
         if (imgMatch) {
           imageUrl = imgMatch[1];
         }
+      }
+    }
+    
+    // For YouTube videos, construct thumbnail URL from video ID if no thumbnail found
+    if (!imageUrl && item.link && (item.link.includes('youtube.com') || item.link.includes('youtu.be'))) {
+      const videoIdMatch = item.link.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+      if (videoIdMatch) {
+        imageUrl = `https://img.youtube.com/vi/${videoIdMatch[1]}/mqdefault.jpg`;
       }
     }
     
@@ -70,8 +99,15 @@ export async function syncFeed(feedId, feedUrl) {
       item.pubDate || new Date().toISOString(),
       imageUrl
     );
-    if (article) newCount++;
+    if (article) {
+      newCount++;
+    } else {
+      duplicateCount++;
+    }
   }
 
+  if (newCount > 0 || skippedCount > 0) {
+    console.log(`Feed ${feedId}: ${newCount} new, ${duplicateCount} duplicates, ${skippedCount} skipped`);
+  }
   return { newCount, total: feed.items.length };
 }

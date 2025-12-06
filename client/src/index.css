@@ -1158,3 +1158,30 @@ body {
   visibility: visible;
   opacity: 1;
 }
+
+/* YouTube Video Styling */
+.article-image-container {
+  position: relative;
+  display: inline-block;
+}
+
+.video-play-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: all 0.2s;
+}
+
+.article-content-wrapper:hover .video-play-overlay {
+  background: rgba(255, 0, 0, 0.9);
+  transform: translate(-50%, -50%) scale(1.1);
+}

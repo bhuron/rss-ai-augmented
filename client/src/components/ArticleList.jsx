@@ -4,6 +4,11 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
   const observerRef = useRef(null);
   const articleRefs = useRef(new Map());
   const [selectedIndex, setSelectedIndex] = useState(0);
+  
+  // Helper to detect YouTube videos
+  const isYouTubeVideo = (link) => {
+    return link?.includes('youtube.com/watch') || link?.includes('youtu.be/');
+  };
 
   // Build navigation list based on view type
   const getNavigationList = () => {
@@ -212,12 +217,21 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
                 </div>
               </div>
               {article.image_url && (
-                <img 
-                  src={`/api/image-proxy?url=${encodeURIComponent(article.image_url)}`}
-                  alt="" 
-                  className="article-image" 
-                  onError={(e) => e.target.style.display = 'none'}
-                />
+                <div className="article-image-container">
+                  <img 
+                    src={`/api/image-proxy?url=${encodeURIComponent(article.image_url)}`}
+                    alt="" 
+                    className="article-image" 
+                    onError={(e) => e.target.style.display = 'none'}
+                  />
+                  {isYouTubeVideo(article.link) && (
+                    <div className="video-play-overlay">
+                      <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
             <div className="article-actions">
@@ -368,12 +382,21 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
                     </div>
                   </div>
                   {article.image_url && (
-                    <img 
-                      src={`/api/image-proxy?url=${encodeURIComponent(article.image_url)}`}
-                      alt="" 
-                      className="article-image" 
-                      onError={(e) => e.target.style.display = 'none'}
-                    />
+                    <div className="article-image-container">
+                      <img 
+                        src={`/api/image-proxy?url=${encodeURIComponent(article.image_url)}`}
+                        alt="" 
+                        className="article-image" 
+                        onError={(e) => e.target.style.display = 'none'}
+                      />
+                      {isYouTubeVideo(article.link) && (
+                        <div className="video-play-overlay">
+                          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
+                            <path d="M8 5v14l11-7z"/>
+                          </svg>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
                 <div className="article-actions">

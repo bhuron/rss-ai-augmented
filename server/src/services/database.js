@@ -73,6 +73,10 @@ export const articleOps = {
     const normalizeUrl = (url) => {
       try {
         const u = new URL(url);
+        
+        // For YouTube, preserve the 'v' parameter (video ID) - it's essential!
+        const isYouTube = u.hostname.includes('youtube.com') || u.hostname.includes('youtu.be');
+        
         // Remove common tracking parameters from various platforms
         const paramsToRemove = [
           'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
@@ -80,10 +84,15 @@ export const articleOps = {
           '_hsenc', '_hsmi', // HubSpot
           'fbclid', 'gclid', // Facebook/Google
           'r', 's', 'publication_id', 'post_id', // Substack
-          'v', 't', // Ghost
+          't', // Ghost (but NOT 'v' for YouTube!)
           'share', 'doing_wp_cron' // WordPress
         ];
-        paramsToRemove.forEach(param => u.searchParams.delete(param));
+        
+        // For YouTube, keep the 'v' parameter
+        paramsToRemove.forEach(param => {
+          if (isYouTube && param === 'v') return; // Don't remove video ID!
+          u.searchParams.delete(param);
+        });
         
         // Also normalize the hash (some feeds include timestamps there)
         u.hash = '';
@@ -99,13 +108,14 @@ export const articleOps = {
     const normalizedLink = normalizeUrl(link);
     const normalizedTitle = normalizeTitle(title);
     
-    // Check for duplicates by normalized link, or by title+feed if link varies
+    // Check for duplicates within the same feed only
     const existing = db.articles.find(a => {
+      if (a.feed_id !== feedId) return false;
+      
       const existingLink = normalizeUrl(a.link);
       const existingTitle = normalizeTitle(a.title);
       
-      return existingLink === normalizedLink || 
-             (a.feed_id === feedId && existingTitle === normalizedTitle);
+      return existingLink === normalizedLink || existingTitle === normalizedTitle;
     });
     
     if (existing) return null;
