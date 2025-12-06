@@ -213,7 +213,7 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
                   {article.feed_title} • {new Date(article.pub_date).toLocaleDateString()}
                 </div>
                 <div className="article-content">
-                  {article.content?.substring(0, 200)}...
+                  {(typeof article.content === 'string' ? article.content : '')?.substring(0, 200)}...
                 </div>
               </div>
               {article.image_url && (
