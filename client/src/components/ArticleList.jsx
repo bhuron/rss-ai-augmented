@@ -219,7 +219,9 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
               {article.image_url && (
                 <div className="article-image-container">
                   <img 
-                    src={`/api/image-proxy?url=${encodeURIComponent(article.image_url)}`}
+                    src={article.image_url.includes('img.youtube.com') || article.image_url.includes('i.ytimg.com') 
+                      ? article.image_url 
+                      : `/api/image-proxy?url=${encodeURIComponent(article.image_url)}`}
                     alt="" 
                     className="article-image" 
                     onError={(e) => e.target.style.display = 'none'}
