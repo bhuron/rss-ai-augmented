@@ -162,14 +162,38 @@ function App() {
   const syncAllFeeds = async () => {
     setSyncing(true);
     try {
-      await fetch('/api/feeds/sync-all', { method: 'POST' });
+      const response = await fetch('/api/feeds/sync-all', { method: 'POST' });
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
       
-      // Only update unread counts silently, don't change the current article list
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const text = decoder.decode(value);
+        const lines = text.split('\n').filter(l => l.trim());
+        
+        for (const line of lines) {
+          try {
+            const data = JSON.parse(line);
+            
+            if (data.type === 'progress') {
+              // Update articles progressively as feeds complete
+              const allRes = await fetch('/api/articles');
+              const allData = await allRes.json();
+              setAllArticles(allData);
+            }
+          } catch (e) {
+            // Ignore parse errors
+          }
+        }
+      }
+      
+      // Final update
       const allRes = await fetch('/api/articles');
       const allData = await allRes.json();
       setAllArticles(allData);
       
-      // Don't update articles or clear categories - keep current view intact
     } catch (error) {
       console.error('Failed to sync feeds:', error);
     } finally {

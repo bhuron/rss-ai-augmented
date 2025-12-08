@@ -112,23 +112,69 @@ router.post('/sync-all', async (req, res) => {
   
   console.log(`Syncing ${feeds.length} feeds in parallel...`);
   
-  // Sync all feeds in parallel for much faster refresh
-  const results = await Promise.allSettled(
-    feeds.map(feed => syncFeed(feed.id, feed.url))
-  );
+  // Set response headers for streaming
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
   
-  const synced = results.filter(r => r.status === 'fulfilled').length;
-  const failed = results.filter(r => r.status === 'rejected').length;
+  let synced = 0;
+  let failed = 0;
+  let completed = 0;
   
-  // Log any failures
-  results.forEach((result, index) => {
-    if (result.status === 'rejected') {
-      console.error(`Failed to sync ${feeds[index].title}:`, result.reason.message);
+  // Sync all feeds in parallel with timeout
+  const syncPromises = feeds.map(async (feed) => {
+    try {
+      // Add 15 second timeout per feed
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 15000)
+      );
+      
+      await Promise.race([
+        syncFeed(feed.id, feed.url),
+        timeoutPromise
+      ]);
+      
+      synced++;
+      completed++;
+      
+      // Send progress update
+      res.write(JSON.stringify({ 
+        type: 'progress', 
+        synced, 
+        failed, 
+        completed,
+        total: feeds.length 
+      }) + '\n');
+      
+    } catch (error) {
+      failed++;
+      completed++;
+      console.error(`Failed to sync ${feed.title}:`, error.message);
+      
+      // Send progress update
+      res.write(JSON.stringify({ 
+        type: 'progress', 
+        synced, 
+        failed, 
+        completed,
+        total: feeds.length 
+      }) + '\n');
     }
   });
   
+  await Promise.all(syncPromises);
+  
   console.log(`Sync complete: ${synced} succeeded, ${failed} failed`);
-  res.json({ synced, failed, total: feeds.length });
+  
+  // Send final result
+  res.write(JSON.stringify({ 
+    type: 'complete',
+    synced, 
+    failed, 
+    total: feeds.length 
+  }) + '\n');
+  
+  res.end();
 });
 
 export default router;
