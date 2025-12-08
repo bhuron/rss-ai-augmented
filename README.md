@@ -6,13 +6,20 @@ An intelligent RSS reader that uses AI to sort and digest articles.
 - Feed management (add/remove RSS feeds)
 - Article list with unread tracking
 - AI-powered article sorting by relevance
-- AI-generated digests
+- AI-generated daily digest with clickable article references
 - **Provider-agnostic LLM support** (OpenAI, Anthropic, OpenRouter, Ollama, or custom)
 - Collapsible sidebar with hover interaction
 - Keyboard shortcuts for navigation
 - Unread article tracking
 - Read later / bookmarking
 - OPML import/export
+- Image proxy for bypassing CORS and hotlink protection
+- Enhanced YouTube feed support:
+  - Automatic thumbnail extraction
+  - Cleaned video descriptions
+  - Play button overlay
+  - Filter out YouTube Shorts (configurable)
+  - Direct thumbnail loading for fast display
 
 ## Setup
 
@@ -63,8 +70,23 @@ All configuration is done through the web UI - no environment variables needed!
 - `m` - Toggle read/unread status
 - `s` - Add/remove article from read later
 - `a` - Go to All Feeds view
+- `l` - Go to Read Later view
 - `c` - Clear categories and return to chronological view
-- `r` - Refresh all feeds
+- `r` - Refresh all feeds (manual sync)
+
+## Configuration
+
+### YouTube Shorts
+By default, YouTube Shorts are filtered out. To include them, add to `server/.env`:
+```
+INCLUDE_SHORTS=true
+```
+
+### Article Retention
+- Read articles: kept for 30 days
+- Unread articles: kept for 60 days
+- Saved articles: kept forever
+- Most recent 200 articles per feed are always kept to prevent re-syncing
 
 ## License
 
