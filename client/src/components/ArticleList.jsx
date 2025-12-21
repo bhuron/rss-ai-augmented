@@ -356,9 +356,14 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
               <div
                 key={`${catIndex}-${article.id}`}
                 ref={(el) => {
-                  // Only set ref for the first occurrence of each article
-                  if (!articleRefs.current.has(article.id)) {
-                    setArticleRef(article.id, el);
+                  // Set ref with a unique key for each occurrence
+                  const uniqueKey = `${article.id}-${catIndex}-${articleIndex}`;
+                  if (el) {
+                    articleRefs.current.set(uniqueKey, el);
+                    // Also set the main ref only for the selected occurrence
+                    if (articleIndexMap.get(article.id) === selectedIndex) {
+                      articleRefs.current.set(article.id, el);
+                    }
                   }
                 }}
                 data-article-id={article.id}

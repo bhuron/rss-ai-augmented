@@ -90,10 +90,23 @@ function parseJSON(content) {
 }
 
 export async function sortArticles(config, articles, criteria = 'relevance and importance') {
+  // Sanitize article titles to prevent JSON encoding issues
+  const sanitizeText = (text) => {
+    if (!text) return '';
+    return text
+      .replace(/[\x00-\x1F\x7F-\x9F]/g, '') // Remove control characters
+      .replace(/\\/g, '') // Remove all backslashes to avoid escape issues
+      .replace(/"/g, "'") // Replace quotes with single quotes
+      .replace(/\r?\n/g, ' ') // Replace newlines with spaces
+      .replace(/[\u0080-\uFFFF]/g, '') // Remove all non-ASCII characters
+      .trim();
+  };
+
   // Limit article list to keep prompt manageable - truncate titles more aggressively
   const articleList = articles.map(a => {
-    const title = a.title.length > 80 ? a.title.substring(0, 80) + '...' : a.title;
-    return `ID:${a.id} - ${title}`;
+    const title = sanitizeText(a.title);
+    const truncated = title.length > 80 ? title.substring(0, 80) + '...' : title;
+    return `ID:${a.id} - ${truncated}`;
   }).join('\n');
 
   const prompt = `Analyze and categorize these ${articles.length} articles by ${criteria}.
