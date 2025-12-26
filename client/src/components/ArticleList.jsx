@@ -72,18 +72,22 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
         if (selectedIndex < maxIndex) {
           const newIndex = selectedIndex + 1;
           setSelectedIndex(newIndex);
-          const article = navList[newIndex];
-          const element = articleRefs.current.get(article?.id);
-          element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // For categorized view, find the selected element by class
+          setTimeout(() => {
+            const selectedElement = document.querySelector('.article-card.selected');
+            selectedElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 0);
         }
       } else if (e.key === 'k' || e.key === 'ArrowUp') {
         e.preventDefault();
         if (selectedIndex > 0) {
           const newIndex = selectedIndex - 1;
           setSelectedIndex(newIndex);
-          const article = navList[newIndex];
-          const element = articleRefs.current.get(article?.id);
-          element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // For categorized view, find the selected element by class
+          setTimeout(() => {
+            const selectedElement = document.querySelector('.article-card.selected');
+            selectedElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 0);
         }
       } else if (e.key === 'Enter' || e.key === 'o') {
         e.preventDefault();
@@ -355,17 +359,7 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
             {categoryArticles.map((article, articleIndex) => (
               <div
                 key={`${catIndex}-${article.id}`}
-                ref={(el) => {
-                  // Set ref with a unique key for each occurrence
-                  const uniqueKey = `${article.id}-${catIndex}-${articleIndex}`;
-                  if (el) {
-                    articleRefs.current.set(uniqueKey, el);
-                    // Also set the main ref only for the selected occurrence
-                    if (articleIndexMap.get(article.id) === selectedIndex) {
-                      articleRefs.current.set(article.id, el);
-                    }
-                  }
-                }}
+                ref={(el) => setArticleRef(article.id, el)}
                 data-article-id={article.id}
                 data-is-read={article.is_read}
                 className={`article-card ${article.is_read ? 'read' : ''} ${articleIndexMap.get(article.id) === selectedIndex ? 'selected' : ''}`}
