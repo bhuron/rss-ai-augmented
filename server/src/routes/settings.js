@@ -5,11 +5,18 @@ const router = express.Router();
 
 router.get('/llm', (req, res) => {
   const settings = settingsOps.getAll('llm_');
-  
+
   const config = {};
   Object.keys(settings).forEach(key => {
     const configKey = key.replace('llm_', '');
-    config[configKey] = settings[key];
+
+    // Security: Never return full API key - return masked version
+    if (configKey === 'apiKey') {
+      const key = settings[key];
+      config[configKey] = key ? `${key.slice(0, 7)}...${key.slice(-4)}` : '';
+    } else {
+      config[configKey] = settings[key];
+    }
   });
 
   res.json(config);
