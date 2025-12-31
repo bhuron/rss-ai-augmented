@@ -2,6 +2,7 @@ import express from 'express';
 import { feedOps } from '../services/database.js';
 import { fetchFeed, syncFeed } from '../services/rss.js';
 import { validateFeedUrl } from '../services/url-validator.js';
+import { XMLParser } from 'fast-xml-parser';
 
 const router = express.Router();
 
@@ -104,46 +105,96 @@ router.post('/import', async (req, res) => {
   }
 
   try {
-    // Simple OPML parser
-    const urlMatches = opml.matchAll(/xmlUrl="([^"]+)"/g);
-    const titleMatches = opml.matchAll(/text="([^"]+)"/g);
+    // Configure XML parser with security options to prevent XXE attacks
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: '',
+      // Security: Prevent XXE (XML External Entity) attacks
+      allowBooleanAttributes: false,
+      parseTagValue: false,
+      parseAttributeValue: false,
+      trimValues: true,
+      // Don't process entities
+      processEntities: false,
+      // Stop parsing at first error to prevent complex attack payloads
+      stopNodes: ['script', 'style'],
+      ignoreDeclaration: true,
+      ignorePiTags: true
+    });
 
-    const urls = Array.from(urlMatches).map(m => m[1]);
-    const titles = Array.from(titleMatches).map(m => m[1]);
+    // Parse OPML XML
+    const parsedData = parser.parse(opml);
+
+    // Extract feeds from parsed OPML structure
+    // Handle both OPML 1.0 and 2.0 formats
+    const body = parsedData.opml?.body || parsedData.body;
+    if (!body) {
+      return res.status(400).json({ error: 'Invalid OPML format: missing body element' });
+    }
+
+    // Extract outlines (feeds) - can be array or nested object
+    const extractOutlines = (element) => {
+      const outlines = [];
+
+      if (Array.isArray(element.outline)) {
+        outlines.push(...element.outline);
+      } else if (element.outline) {
+        outlines.push(element.outline);
+      }
+
+      // Recursively extract nested outlines
+      for (const key in element) {
+        if (typeof element[key] === 'object' && key !== 'outline') {
+          outlines.push(...extractOutlines(element[key]));
+        }
+      }
+
+      return outlines;
+    };
+
+    const feeds = extractOutlines(body).filter(item => item.xmlUrl);
 
     let imported = 0;
     let failed = 0;
     let blocked = 0;
 
-    for (let i = 0; i < urls.length; i++) {
+    for (const feed of feeds) {
       try {
-        const existingFeed = feedOps.all().find(f => f.url === urls[i]);
+        const url = feed.xmlUrl;
+        const title = feed.text || feed.title;
+
+        if (!url) {
+          failed++;
+          continue;
+        }
+
+        const existingFeed = feedOps.all().find(f => f.url === url);
         if (!existingFeed) {
           // Validate URL to prevent SSRF attacks
-          const validation = await validateFeedUrl(urls[i]);
+          const validation = await validateFeedUrl(url);
           if (!validation.safe) {
-            console.log(`[Security] Blocked feed import: ${urls[i]} (${validation.reason})`);
+            console.log(`[Security] Blocked feed import: ${url} (${validation.reason})`);
             blocked++;
             failed++;
             continue;
           }
 
           if (validation.warning) {
-            console.log(`[Warning] Importing feed with ${validation.warning}: ${urls[i]}`);
+            console.log(`[Warning] Importing feed with ${validation.warning}: ${url}`);
           }
 
-          const feed = await fetchFeed(urls[i]);
-          const newFeed = feedOps.insert(feed.title || titles[i], urls[i]);
-          await syncFeed(newFeed.id, urls[i]);
+          const feedData = await fetchFeed(url);
+          const newFeed = feedOps.insert(feedData.title || title, url);
+          await syncFeed(newFeed.id, url);
           imported++;
         }
       } catch (error) {
-        console.error(`Failed to import ${urls[i]}:`, error.message);
+        console.error(`Failed to import feed:`, error.message);
         failed++;
       }
     }
 
-    res.json({ imported, failed, blocked, total: urls.length });
+    res.json({ imported, failed, blocked, total: feeds.length });
   } catch (error) {
     // Don't leak detailed error messages
     console.error('Import error:', error);
