@@ -1,6 +1,7 @@
 import express from 'express';
 import { feedOps } from '../services/database.js';
 import { fetchFeed, syncFeed } from '../services/rss.js';
+import { validateFeedUrl } from '../services/url-validator.js';
 
 const router = express.Router();
 
@@ -11,18 +12,35 @@ router.get('/', (req, res) => {
 
 router.post('/', async (req, res) => {
   const { url } = req.body;
-  
+
+  if (!url) {
+    return res.status(400).json({ error: 'URL is required' });
+  }
+
+  // Validate URL to prevent SSRF attacks
+  const validation = await validateFeedUrl(url);
+  if (!validation.safe) {
+    console.log(`[Security] Blocked feed addition: ${url} (${validation.reason})`);
+    return res.status(403).json({ error: 'Invalid or blocked URL' });
+  }
+
+  if (validation.warning) {
+    console.log(`[Warning] Adding feed with ${validation.warning}: ${url}`);
+  }
+
   try {
     const feed = await fetchFeed(url);
     // Fallback to URL hostname if title is empty
     const title = feed.title?.trim() || new URL(url).hostname;
     const newFeed = feedOps.insert(title, url);
-    
+
     await syncFeed(newFeed.id, url);
-    
+
     res.json(newFeed);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    // Don't leak detailed error messages
+    console.error(`Failed to add feed ${url}:`, error.message);
+    res.status(400).json({ error: 'Failed to fetch feed. Please check the URL and try again.' });
   }
 });
 
@@ -45,12 +63,18 @@ router.patch('/:id', (req, res) => {
 
 router.post('/:id/sync', async (req, res) => {
   const feed = feedOps.get(parseInt(req.params.id));
-  
+
+  if (!feed) {
+    return res.status(404).json({ error: 'Feed not found' });
+  }
+
   try {
     const result = await syncFeed(feed.id, feed.url);
     res.json(result);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    // Don't leak detailed error messages
+    console.error(`Failed to sync feed ${feed.url}:`, error.message);
+    res.status(400).json({ error: 'Failed to sync feed. Please try again later.' });
   }
 });
 
@@ -74,22 +98,40 @@ ${feeds.map(feed => `    <outline type="rss" text="${feed.title}" xmlUrl="${feed
 
 router.post('/import', async (req, res) => {
   const { opml } = req.body;
-  
+
+  if (!opml) {
+    return res.status(400).json({ error: 'OPML data is required' });
+  }
+
   try {
     // Simple OPML parser
     const urlMatches = opml.matchAll(/xmlUrl="([^"]+)"/g);
     const titleMatches = opml.matchAll(/text="([^"]+)"/g);
-    
+
     const urls = Array.from(urlMatches).map(m => m[1]);
     const titles = Array.from(titleMatches).map(m => m[1]);
-    
+
     let imported = 0;
     let failed = 0;
-    
+    let blocked = 0;
+
     for (let i = 0; i < urls.length; i++) {
       try {
         const existingFeed = feedOps.all().find(f => f.url === urls[i]);
         if (!existingFeed) {
+          // Validate URL to prevent SSRF attacks
+          const validation = await validateFeedUrl(urls[i]);
+          if (!validation.safe) {
+            console.log(`[Security] Blocked feed import: ${urls[i]} (${validation.reason})`);
+            blocked++;
+            failed++;
+            continue;
+          }
+
+          if (validation.warning) {
+            console.log(`[Warning] Importing feed with ${validation.warning}: ${urls[i]}`);
+          }
+
           const feed = await fetchFeed(urls[i]);
           const newFeed = feedOps.insert(feed.title || titles[i], urls[i]);
           await syncFeed(newFeed.id, urls[i]);
@@ -100,10 +142,12 @@ router.post('/import', async (req, res) => {
         failed++;
       }
     }
-    
-    res.json({ imported, failed, total: urls.length });
+
+    res.json({ imported, failed, blocked, total: urls.length });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    // Don't leak detailed error messages
+    console.error('Import error:', error);
+    res.status(400).json({ error: 'Failed to import feeds. Please check the OPML format.' });
   }
 });
 

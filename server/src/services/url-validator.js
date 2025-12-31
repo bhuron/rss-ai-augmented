@@ -166,6 +166,76 @@ export async function validateUrl(urlString) {
 }
 
 /**
+ * Check if a feed URL is safe (more permissive than validateUrl)
+ * Allows private IP ranges for self-hosted feeds, but blocks critical targets
+ * @param {string} urlString - URL to check
+ * @returns {Promise<{safe: boolean, reason?: string, warning?: string}>}
+ */
+export async function validateFeedUrl(urlString) {
+  try {
+    const url = new URL(urlString);
+
+    // Only allow HTTP/HTTPS
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return { safe: false, reason: 'Invalid protocol' };
+    }
+
+    const hostname = url.hostname.toLowerCase();
+
+    // CRITICAL: Block localhost and loopback (no legitimate feed use case)
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0') {
+      return { safe: false, reason: 'Blocked hostname' };
+    }
+
+    // CRITICAL: Block cloud metadata services
+    if (hostname === '169.254.169.254' ||
+        hostname === 'metadata.google.internal' ||
+        hostname === 'metadata.server' ||
+        hostname.startsWith('metadata.')) {
+      return { safe: false, reason: 'Blocked hostname' };
+    }
+
+    // Block .local domains (mDNS/Bonjour - usually not real feeds)
+    if (hostname.endsWith('.local') || hostname.endsWith('.localhost')) {
+      return { safe: false, reason: 'Blocked hostname pattern' };
+    }
+
+    // Check if hostname is an IP address
+    if (/^[\d\[\]:.]+$/.test(hostname.replace(/\[|\]/g, ''))) {
+      // Allow loopback for self-hosted feeds (but warn)
+      if (hostname.startsWith('127.') || hostname === '::1') {
+        return { safe: false, reason: 'Loopback address not allowed' };
+      }
+
+      // Allow private IPs (self-hosted feeds) but warn
+      if (isPrivateIP(hostname)) {
+        return { safe: true, warning: 'Private IP address' };
+      }
+
+      return { safe: true };
+    }
+
+    // For domain names, resolve to IP and check
+    const ip = await resolveIp(hostname);
+
+    // If DNS resolution fails, allow it (feed fetch will fail naturally)
+    if (ip === null) {
+      return { safe: true };
+    }
+
+    // Allow private IPs (self-hosted feeds) but warn
+    if (isPrivateIP(ip)) {
+      return { safe: true, warning: 'Resolves to private IP' };
+    }
+
+    return { safe: true };
+  } catch (error) {
+    // Invalid URL
+    return { safe: false, reason: 'Invalid URL' };
+  }
+}
+
+/**
  * Clear expired cache entries (call periodically)
  */
 export function cleanCache() {

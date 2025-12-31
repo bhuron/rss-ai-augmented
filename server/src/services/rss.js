@@ -53,25 +53,41 @@ function cleanYouTubeDescription(text) {
 export async function fetchFeed(feedUrl) {
   try {
     // Fetch the feed manually to handle encoding properly
-    const response = await fetch(feedUrl);
+    // Add timeout to prevent hanging on slow/unresponsive feeds
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+    const response = await fetch(feedUrl, {
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
     const buffer = await response.arrayBuffer();
-    
+
     // Try to detect encoding from Content-Type header
     const contentType = response.headers.get('content-type') || '';
     let encoding = 'utf-8';
-    
+
     const charsetMatch = contentType.match(/charset=([^;]+)/i);
     if (charsetMatch) {
       encoding = charsetMatch[1].trim();
     }
-    
+
     // Decode the buffer with the correct encoding
     const xmlString = iconv.decode(Buffer.from(buffer), encoding);
-    
+
     // Parse the decoded XML
     const feed = await parser.parseString(xmlString);
     return feed;
   } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('Feed request timed out');
+    }
     console.error('Error fetching feed:', error);
     // Fallback to default parser
     const feed = await parser.parseURL(feedUrl);
