@@ -1,10 +1,21 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import { feedOps } from '../services/database.js';
 import { fetchFeed, syncFeed } from '../services/rss.js';
 import { validateFeedUrl } from '../services/url-validator.js';
 import { XMLParser } from 'fast-xml-parser';
 
 const router = express.Router();
+
+// Rate limiter for sync endpoints to prevent abuse and resource exhaustion
+// Allow 1 sync request per minute per IP address
+const syncRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 1,
+  message: { error: 'Too many sync requests. Please wait before syncing again.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 router.get('/', (req, res) => {
   const feeds = feedOps.all();
@@ -62,7 +73,7 @@ router.patch('/:id', (req, res) => {
   res.json({ success: true });
 });
 
-router.post('/:id/sync', async (req, res) => {
+router.post('/:id/sync', syncRateLimiter, async (req, res) => {
   const feed = feedOps.get(parseInt(req.params.id));
 
   if (!feed) {
@@ -202,7 +213,7 @@ router.post('/import', async (req, res) => {
   }
 });
 
-router.post('/sync-all', async (req, res) => {
+router.post('/sync-all', syncRateLimiter, async (req, res) => {
   const feeds = feedOps.all();
   
   console.log(`Syncing ${feeds.length} feeds in parallel...`);
