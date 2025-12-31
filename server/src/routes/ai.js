@@ -1,8 +1,19 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import { articleOps, settingsOps } from '../services/database.js';
 import { sortArticles, generateDigest } from '../services/ai.js';
 
 const router = express.Router();
+
+// Rate limiter for AI endpoints to prevent API credit drainage
+// Allow 10 requests per 15 minutes per IP address
+const aiRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  message: { error: 'Too many AI requests. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 function getLLMConfig() {
   const settings = settingsOps.getAll('llm_');
@@ -16,7 +27,7 @@ function getLLMConfig() {
   return config;
 }
 
-router.post('/sort', async (req, res) => {
+router.post('/sort', aiRateLimiter, async (req, res) => {
   const { articleIds, criteria } = req.body;
   
   try {
@@ -47,7 +58,7 @@ router.post('/sort', async (req, res) => {
   }
 });
 
-router.post('/digest', async (req, res) => {
+router.post('/digest', aiRateLimiter, async (req, res) => {
   const { articleIds } = req.body;
   
   try {
