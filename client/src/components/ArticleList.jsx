@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { sanitizeHtml, stripHtml } from '../utils/sanitizeHtml.js';
 
 function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
   const observerRef = useRef(null);
@@ -212,12 +213,12 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
               }}
             >
               <div className="article-text">
-                <h3>{article.title}</h3>
+                <h3>{stripHtml(article.title)}</h3>
                 <div className="article-meta">
-                  {article.feed_title} • {new Date(article.pub_date).toLocaleDateString()}
+                  {stripHtml(article.feed_title)} • {new Date(article.pub_date).toLocaleDateString()}
                 </div>
                 <div className="article-content">
-                  {(typeof article.content === 'string' ? article.content : '')?.substring(0, 200)}...
+                  {stripHtml(article.content || '').substring(0, 200)}...
                 </div>
               </div>
               {article.image_url && (
@@ -304,7 +305,7 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
                       >
                         🔗
                       </a>
-                      <span className="digest-tooltip-text">{article.title}</span>
+                      <span className="digest-tooltip-text">{stripHtml(article.title)}</span>
                     </span>
                   );
                 }
@@ -322,7 +323,7 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
                         >
                           [{idx + 1}]
                         </a>
-                        <span className="digest-tooltip-text">{article.title}</span>
+                        <span className="digest-tooltip-text">{stripHtml(article.title)}</span>
                       </span>
                     ))}
                   </span>
@@ -374,12 +375,12 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
                   }}
                 >
                   <div className="article-text">
-                    <h3>{article.title}</h3>
+                    <h3>{stripHtml(article.title)}</h3>
                     <div className="article-meta">
-                      {article.feed_title} • {new Date(article.pub_date).toLocaleDateString()}
+                      {stripHtml(article.feed_title)} • {new Date(article.pub_date).toLocaleDateString()}
                     </div>
                     <div className="article-content">
-                      {article.content?.substring(0, 200)}...
+                      {stripHtml(article.content || '').substring(0, 200)}...
                     </div>
                   </div>
                   {article.image_url && (
