@@ -79,9 +79,15 @@ app.get('/api/image-proxy', async (req, res) => {
     }
 
     const contentType = response.headers.get('content-type');
-    if (contentType) {
-      res.setHeader('Content-Type', contentType);
+
+    // Security: Validate Content-Type to prevent proxying non-image content
+    // Allow all common image types (includes variations like image/jpeg, image/png, etc.)
+    if (!contentType || !contentType.startsWith('image/')) {
+      console.log(`[Security] Blocked non-image content: ${url} (Content-Type: ${contentType})`);
+      return res.status(403).send('Forbidden: Not an image');
     }
+
+    res.setHeader('Content-Type', contentType);
 
     // Cache for 1 day
     res.setHeader('Cache-Control', 'public, max-age=86400');
