@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { initDatabase, articleOps } from './services/database.js';
+import { validateUrl, cleanCache } from './services/url-validator.js';
 import feedRoutes from './routes/feeds.js';
 import articleRoutes from './routes/articles.js';
 import aiRoutes from './routes/ai.js';
@@ -33,39 +34,58 @@ setInterval(() => {
   articleOps.cleanup();
 }, 24 * 60 * 60 * 1000); // Every 24 hours
 
+// Clean up DNS cache periodically (every hour)
+setInterval(() => {
+  cleanCache();
+}, 60 * 60 * 1000);
+
 // Image proxy to bypass CORS/hotlinking restrictions
 app.get('/api/image-proxy', async (req, res) => {
   const { url } = req.query;
-  
+
   if (!url) {
     return res.status(400).send('Missing url parameter');
   }
-  
+
   // Skip relative URLs silently
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
     return res.status(404).send('Not found');
   }
-  
+
+  // Validate URL to prevent SSRF attacks
+  const validation = await validateUrl(url);
+  if (!validation.safe) {
+    console.log(`[Security] Blocked image proxy request: ${url} (${validation.reason})`);
+    return res.status(403).send('Forbidden');
+  }
+
   try {
+    // Add timeout to prevent hanging (5 seconds)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
     const response = await fetch(url, {
+      signal: controller.signal,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Referer': new URL(url).origin
       }
     });
-    
+
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
       return res.status(response.status).send('Failed to fetch image');
     }
-    
+
     const contentType = response.headers.get('content-type');
     if (contentType) {
       res.setHeader('Content-Type', contentType);
     }
-    
+
     // Cache for 1 day
     res.setHeader('Cache-Control', 'public, max-age=86400');
-    
+
     const buffer = await response.arrayBuffer();
     res.send(Buffer.from(buffer));
   } catch (error) {
