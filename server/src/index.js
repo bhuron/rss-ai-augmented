@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { initDatabase, articleOps } from './services/database.js';
+import { initDatabase, shutdownDatabase, articleOps } from './services/database.js';
 import { validateUrl, cleanCache } from './services/url-validator.js';
 import feedRoutes from './routes/feeds.js';
 import articleRoutes from './routes/articles.js';
@@ -114,6 +114,32 @@ app.use('/api/articles', articleRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/settings', settingsRoutes);
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
+// Graceful shutdown handler
+async function shutdown(signal) {
+  console.log(`\n${signal} received, shutting down gracefully...`);
+
+  // Stop accepting new connections
+  server.close(async () => {
+    console.log('HTTP server closed');
+
+    // Wait for pending database saves
+    await shutdownDatabase();
+    console.log('Database shutdown complete');
+
+    process.exit(0);
+  });
+
+  // Force shutdown after 10 seconds
+  setTimeout(() => {
+    console.error('Forced shutdown after timeout');
+    process.exit(1);
+  }, 10000);
+}
+
+// Handle shutdown signals
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

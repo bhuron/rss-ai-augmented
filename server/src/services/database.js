@@ -19,12 +19,46 @@ function loadDatabase() {
   }
 }
 
+let saveTimeout = null;
+
 function saveDatabase() {
-  fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf8');
+  // If save is already pending, don't schedule another
+  if (saveTimeout) return;
+
+  saveTimeout = true;
+
+  // Use setImmediate to schedule the write after all synchronous operations
+  setImmediate(() => {
+    fs.writeFile(DB_FILE, JSON.stringify(db, null, 2), 'utf8', (err) => {
+      saveTimeout = null;
+      if (err) {
+        console.error('Database save failed:', err);
+      }
+    });
+  });
 }
 
 export function initDatabase() {
   loadDatabase();
+}
+
+export function shutdownDatabase() {
+  return new Promise((resolve, reject) => {
+    if (!saveTimeout) {
+      resolve();
+      return;
+    }
+
+    // Wait a bit for any pending save to complete
+    setTimeout(() => {
+      if (saveTimeout) {
+        console.warn('Shutdown: waiting for database save...');
+        setTimeout(resolve, 100);
+      } else {
+        resolve();
+      }
+    }, 50);
+  });
 }
 
 // Feed operations
