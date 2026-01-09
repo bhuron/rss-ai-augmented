@@ -38,3 +38,9 @@ coverage/
 # Temporary files
 *.tmp
 .cache/
+
+# PM2
+.pm2/
+logs/
+*.pid
+.pm2.log
