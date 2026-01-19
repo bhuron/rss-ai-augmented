@@ -21,7 +21,7 @@ function FeedList({ feeds, selectedFeed, showSavedOnly, onSelectFeed, onSelectSa
         <div className="add-feed">
           <input
             type="text"
-            placeholder="RSS feed URL"
+            placeholder="RSS feed URL or YouTube channel URL"
             value={newFeedUrl}
             onChange={(e) => setNewFeedUrl(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleAdd()}

@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit';
 import { feedOps } from '../services/database.js';
 import { fetchFeed, syncFeed } from '../services/rss.js';
 import { validateFeedUrl } from '../services/url-validator.js';
+import { convertYouTubeUrl, isYouTubeChannelUrl } from '../services/youtube-url.js';
 import { XMLParser } from 'fast-xml-parser';
 
 const router = express.Router();
@@ -29,24 +30,35 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'URL is required' });
   }
 
+  // Convert YouTube channel URLs to RSS feed URLs
+  let feedUrl = url;
+  if (isYouTubeChannelUrl(url)) {
+    try {
+      feedUrl = await convertYouTubeUrl(url);
+      console.log(`Converted YouTube URL: ${url} -> ${feedUrl}`);
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
+
   // Validate URL to prevent SSRF attacks
-  const validation = await validateFeedUrl(url);
+  const validation = await validateFeedUrl(feedUrl);
   if (!validation.safe) {
-    console.log(`[Security] Blocked feed addition: ${url} (${validation.reason})`);
+    console.log(`[Security] Blocked feed addition: ${feedUrl} (${validation.reason})`);
     return res.status(403).json({ error: 'Invalid or blocked URL' });
   }
 
   if (validation.warning) {
-    console.log(`[Warning] Adding feed with ${validation.warning}: ${url}`);
+    console.log(`[Warning] Adding feed with ${validation.warning}: ${feedUrl}`);
   }
 
   try {
-    const feed = await fetchFeed(url);
+    const feed = await fetchFeed(feedUrl);
     // Fallback to URL hostname if title is empty
-    const title = feed.title?.trim() || new URL(url).hostname;
-    const newFeed = feedOps.insert(title, url);
+    const title = feed.title?.trim() || new URL(feedUrl).hostname;
+    const newFeed = feedOps.insert(title, feedUrl);
 
-    await syncFeed(newFeed.id, url);
+    await syncFeed(newFeed.id, feedUrl);
 
     res.json(newFeed);
   } catch (error) {
