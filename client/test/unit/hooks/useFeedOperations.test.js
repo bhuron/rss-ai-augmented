@@ -29,6 +29,7 @@ describe('useFeedOperations', () => {
     ];
 
     global.fetch.mockResolvedValueOnce({
+        ok: true,
       json: async () => mockFeeds
     });
 
@@ -44,6 +45,7 @@ describe('useFeedOperations', () => {
 
   it('should add feed', async () => {
     global.fetch.mockResolvedValueOnce({
+        ok: true,
       json: async () => ({ id: 1, title: 'New Feed', url: 'https://example.com/feed.xml' })
     });
 
@@ -52,6 +54,7 @@ describe('useFeedOperations', () => {
       { id: 1, title: 'New Feed', url: 'https://example.com/feed.xml' }
     ];
     global.fetch.mockResolvedValueOnce({
+        ok: true,
       json: async () => mockFeeds
     });
 
@@ -70,12 +73,14 @@ describe('useFeedOperations', () => {
 
   it('should delete feed', async () => {
     global.fetch.mockResolvedValueOnce({
+        ok: true,
       ok: true
     });
 
     // Mock fetchFeeds call
     const mockFeeds = [];
     global.fetch.mockResolvedValueOnce({
+        ok: true,
       json: async () => mockFeeds
     });
 
@@ -93,11 +98,13 @@ describe('useFeedOperations', () => {
 
   it('should delete feed without clearing selection if different feed selected', async () => {
     global.fetch.mockResolvedValueOnce({
+        ok: true,
       ok: true
     });
 
     // Mock fetchFeeds call
     global.fetch.mockResolvedValueOnce({
+        ok: true,
       json: async () => []
     });
 
@@ -115,11 +122,13 @@ describe('useFeedOperations', () => {
 
   it('should delete feed without setSelectedFeed callback', async () => {
     global.fetch.mockResolvedValueOnce({
+        ok: true,
       ok: true
     });
 
     // Mock fetchFeeds call
     global.fetch.mockResolvedValueOnce({
+        ok: true,
       json: async () => []
     });
 
@@ -134,6 +143,7 @@ describe('useFeedOperations', () => {
 
   it('should sync feed', async () => {
     global.fetch.mockResolvedValueOnce({
+        ok: true,
       ok: true
     });
 
@@ -162,6 +172,7 @@ describe('useFeedOperations', () => {
     expect(result.current.feeds[0].title).toBe('Old Title');
 
     global.fetch.mockResolvedValueOnce({
+        ok: true,
       ok: true
     });
 
@@ -201,11 +212,13 @@ describe('useFeedOperations', () => {
     const mockResult = { imported: 5, failed: 0 };
 
     global.fetch.mockResolvedValueOnce({
+        ok: true,
       json: async () => mockResult
     });
 
     // Mock fetchFeeds call
     global.fetch.mockResolvedValueOnce({
+        ok: true,
       json: async () => []
     });
 
@@ -241,7 +254,7 @@ describe('useFeedOperations', () => {
     const { result } = renderHook(() => useFeedOperations());
 
     await act(async () => {
-      await result.current.importFeeds('<opml>...</opml>');
+      await expect(result.current.importFeeds('<opml>...</opml>')).rejects.toThrow('Network error');
     });
 
     expect(window.alert).toHaveBeenCalledWith('Import failed: Network error');

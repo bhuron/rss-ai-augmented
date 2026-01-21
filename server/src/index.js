@@ -7,6 +7,7 @@ import feedRoutes from './routes/feeds.js';
 import articleRoutes from './routes/articles.js';
 import aiRoutes from './routes/ai.js';
 import settingsRoutes from './routes/settings.js';
+import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 dotenv.config();
 
@@ -108,28 +109,7 @@ app.get('/api/image-proxy', async (req, res) => {
   }
 });
 
-// Error handling middleware
-function notFound(req, res, next) {
-  res.status(404).json({ error: 'Not found' });
-}
-
-function errorHandler(err, req, res, next) {
-  // Log error for debugging
-  console.error('Error:', err);
-
-  // Zod validation errors
-  if (err.name === 'ZodError') {
-    return res.status(400).json({
-      error: err.errors[0]?.message || 'Validation failed'
-    });
-  }
-
-  // Other errors
-  const statusCode = err.statusCode || 500;
-  res.status(statusCode).json({
-    error: err.message || 'Internal server error'
-  });
-}
+// Error handling middleware (imported from middleware/errorHandler.js)
 
 // Routes
 app.use('/api/feeds', feedRoutes);

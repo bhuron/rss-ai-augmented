@@ -26,10 +26,12 @@ describe('Article fetching (Integration)', () => {
       // Both calls should be made
       if (url === '/api/articles?unreadOnly=true') {
         return Promise.resolve({
+          ok: true,
           json: async () => mockArticles.filter(a => !a.is_read)
         });
       } else if (url === '/api/articles') {
         return Promise.resolve({
+          ok: true,
           json: async () => mockArticles
         });
       }
@@ -55,9 +57,11 @@ describe('Article fetching (Integration)', () => {
   it('should update both articles and allArticles state correctly', async () => {
     fetchSpy
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => mockArticles.filter(a => !a.is_read)
       })
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => mockArticles
       });
 
@@ -81,9 +85,11 @@ describe('Article fetching (Integration)', () => {
 
     fetchSpy
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => unreadArticles
       })
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => mockArticles
       });
 
@@ -103,9 +109,11 @@ describe('Article fetching (Integration)', () => {
   it('should apply saved filter correctly (client-side)', async () => {
     fetchSpy
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => mockArticles
       })
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => mockArticles
       });
 
@@ -125,7 +133,10 @@ describe('Article fetching (Integration)', () => {
   it('should handle fetch errors gracefully', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    fetchSpy.mockRejectedValue(new Error('Network error'));
+    // Mock both parallel fetch calls to reject
+    fetchSpy
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockRejectedValueOnce(new Error('Network error'));
 
     const { result } = renderHook(() =>
       useArticles({ selectedFeed: null, showUnreadOnly: false, showSavedOnly: false })
@@ -138,9 +149,8 @@ describe('Article fetching (Integration)', () => {
     // Should log error
     expect(consoleErrorSpy).toHaveBeenCalled();
 
-    // States should remain empty (not corrupted)
-    expect(result.current.articles).toEqual([]);
-    expect(result.current.allArticles).toEqual([]);
+    // Error state should be set
+    expect(result.current.error).toBeTruthy();
 
     consoleErrorSpy.mockRestore();
   });

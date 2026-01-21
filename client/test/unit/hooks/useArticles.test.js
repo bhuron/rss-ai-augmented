@@ -19,9 +19,11 @@ describe('useArticles', () => {
 
     global.fetch
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => mockArticles
       })
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => mockArticles
       });
 
@@ -53,9 +55,11 @@ describe('useArticles', () => {
 
     global.fetch
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => mockFilteredArticles
       })
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => mockAllArticles
       });
 
@@ -86,9 +90,11 @@ describe('useArticles', () => {
 
     global.fetch
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => mockArticles
       })
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => mockArticles
       });
 
@@ -116,9 +122,11 @@ describe('useArticles', () => {
 
     global.fetch
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => mockArticles
       })
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => mockArticles
       });
 
@@ -139,7 +147,10 @@ describe('useArticles', () => {
   });
 
   it('should handle fetch errors gracefully', async () => {
-    global.fetch.mockRejectedValueOnce(new Error('Network error'));
+    // Mock both parallel fetch calls to reject
+    global.fetch
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockRejectedValueOnce(new Error('Network error'));
 
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -159,6 +170,7 @@ describe('useArticles', () => {
       'Failed to fetch articles:',
       expect.any(Error)
     );
+    expect(result.current.error).toBeTruthy();
 
     consoleErrorSpy.mockRestore();
   });
@@ -166,9 +178,11 @@ describe('useArticles', () => {
   it('should provide setArticles and setAllArticles', async () => {
     global.fetch
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => []
       })
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => []
       });
 
@@ -192,9 +206,11 @@ describe('useArticles', () => {
 
     global.fetch
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => mockArticles
       })
       .mockResolvedValueOnce({
+        ok: true,
         json: async () => mockArticles
       });
 
@@ -217,6 +233,7 @@ describe('useArticles', () => {
 
   it('should refetch when filters change', async () => {
     global.fetch.mockResolvedValue({
+      ok: true,
       json: async () => []
     });
 

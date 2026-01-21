@@ -140,7 +140,7 @@ export const api = {
    * Sync all feeds with progress streaming
    * Returns an async iterator that yields progress updates
    */
-  syncAllFeeds() {
+  async syncAllFeeds() {
     const response = await fetch('/api/feeds/sync-all', {
       method: 'POST'
     });

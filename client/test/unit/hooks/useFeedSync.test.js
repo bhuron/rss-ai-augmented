@@ -34,12 +34,18 @@ describe('useFeedSync', () => {
 
     global.fetch
       .mockResolvedValueOnce({
+        ok: true,
+        ok: true,
         body: mockStream
       })
       .mockResolvedValueOnce({
+        ok: true,
+        ok: true,
         json: async () => mockAllArticles
       })
       .mockResolvedValueOnce({
+        ok: true,
+        ok: true,
         json: async () => mockAllArticles
       });
 
@@ -72,12 +78,18 @@ describe('useFeedSync', () => {
 
     global.fetch
       .mockResolvedValueOnce({
+        ok: true,
+        ok: true,
         body: mockStream
       })
       .mockResolvedValueOnce({
+        ok: true,
+        ok: true,
         json: async () => mockAllArticles
       })
       .mockResolvedValueOnce({
+        ok: true,
+        ok: true,
         json: async () => mockAllArticles
       });
 
@@ -108,12 +120,18 @@ describe('useFeedSync', () => {
 
     global.fetch
       .mockResolvedValueOnce({
+        ok: true,
+        ok: true,
         body: mockStream
       })
       .mockResolvedValueOnce({
+        ok: true,
+        ok: true,
         json: async () => mockAllArticles
       })
       .mockResolvedValueOnce({
+        ok: true,
+        ok: true,
         json: async () => mockAllArticles
       });
 
@@ -144,9 +162,13 @@ describe('useFeedSync', () => {
 
     global.fetch
       .mockResolvedValueOnce({
+        ok: true,
+        ok: true,
         body: mockStream
       })
       .mockResolvedValue({
+        ok: true,
+        ok: true,
         json: async () => mockAllArticles
       });
 
@@ -208,9 +230,13 @@ describe('useFeedSync', () => {
 
     global.fetch
       .mockResolvedValueOnce({
+        ok: true,
+        ok: true,
         body: mockStream
       })
       .mockResolvedValueOnce({
+        ok: true,
+        ok: true,
         json: async () => mockAllArticles
       });
 
@@ -243,9 +269,13 @@ describe('useFeedSync', () => {
 
     global.fetch
       .mockResolvedValueOnce({
+        ok: true,
+        ok: true,
         body: mockStream
       })
       .mockResolvedValueOnce({
+        ok: true,
+        ok: true,
         json: async () => mockAllArticles
       });
 
