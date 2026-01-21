@@ -1,6 +1,7 @@
 // Simple in-memory database using JSON storage
 import fs from 'fs';
 import path from 'path';
+import { normalizeUrl } from '../utils/url.js';
 
 const DB_FILE = 'database.json';
 
@@ -103,49 +104,15 @@ export const articleOps = {
     }));
   },
   insert: (feedId, title, link, content, pubDate, imageUrl = null) => {
-    // Normalize for comparison
-    const normalizeUrl = (url) => {
-      try {
-        const u = new URL(url);
-        
-        // For YouTube, preserve the 'v' parameter (video ID) - it's essential!
-        const isYouTube = u.hostname.includes('youtube.com') || u.hostname.includes('youtu.be');
-        
-        // Remove common tracking parameters from various platforms
-        const paramsToRemove = [
-          'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
-          'ref', 'source', 'mc_cid', 'mc_eid', // Mailchimp
-          '_hsenc', '_hsmi', // HubSpot
-          'fbclid', 'gclid', // Facebook/Google
-          'r', 's', 'publication_id', 'post_id', // Substack
-          't', // Ghost (but NOT 'v' for YouTube!)
-          'share', 'doing_wp_cron' // WordPress
-        ];
-        
-        // For YouTube, keep the 'v' parameter
-        paramsToRemove.forEach(param => {
-          if (isYouTube && param === 'v') return; // Don't remove video ID!
-          u.searchParams.delete(param);
-        });
-        
-        // Also normalize the hash (some feeds include timestamps there)
-        u.hash = '';
-        
-        return u.toString();
-      } catch {
-        return url;
-      }
-    };
-    
     const normalizeTitle = (t) => t.trim().toLowerCase().replace(/\s+/g, ' ');
-    
+
     const normalizedLink = normalizeUrl(link);
     const normalizedTitle = normalizeTitle(title);
-    
+
     // Check for duplicates within the same feed only
     const existing = db.articles.find(a => {
       if (a.feed_id !== feedId) return false;
-      
+
       const existingLink = normalizeUrl(a.link);
       const existingTitle = normalizeTitle(a.title);
       

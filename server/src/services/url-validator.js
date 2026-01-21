@@ -12,9 +12,9 @@ const BLOCKED_HOSTNAMES = [
   'localhost',
   '127.0.0.1',
   '0.0.0.0',
+  '[::1]',            // IPv6 loopback (URL parser returns hostname with brackets)
   '169.254.169.254',  // AWS metadata
   'metadata.google.internal',  // GCP metadata
-  '169.254.169.254',  // Azure metadata
   'metadata.server',  // Azure metadata
 ];
 
@@ -130,16 +130,19 @@ export async function validateUrl(urlString) {
 
     // Fast checks: blocked hostname patterns
     for (const pattern of BLOCKED_PATTERNS) {
-      if (hostname === pattern || hostname.endsWith(pattern)) {
+      if (hostname === pattern ||
+          hostname.endsWith(pattern) ||
+          hostname.startsWith(pattern)) {
         return { safe: false, reason: 'Blocked hostname pattern' };
       }
     }
 
     // Don't resolve IP addresses - just validate them directly
-    // If hostname is already an IP address
-    if (/^[\d\[\]:.]+$/.test(hostname.replace(/\[|\]/g, ''))) {
-      // It's an IP address, check if private
-      if (isPrivateIP(hostname)) {
+    // If hostname is already an IP address (IPv4: digits+dots, IPv6: hex+colons)
+    const ipToCheck = hostname.replace(/\[|\]/g, '');
+    if (/^[\d\[\]:.a-fA-F]+$/.test(ipToCheck)) {
+      // It's an IP address, check if private (use version without brackets for IPv6)
+      if (isPrivateIP(ipToCheck)) {
         return { safe: false, reason: 'Private IP address' };
       }
       return { safe: true };
@@ -200,15 +203,16 @@ export async function validateFeedUrl(urlString) {
       return { safe: false, reason: 'Blocked hostname pattern' };
     }
 
-    // Check if hostname is an IP address
-    if (/^[\d\[\]:.]+$/.test(hostname.replace(/\[|\]/g, ''))) {
+    // Check if hostname is an IP address (IPv4: digits+dots, IPv6: hex+colons)
+    const ipToCheck = hostname.replace(/\[|\]/g, '');
+    if (/^[\d\[\]:.a-fA-F]+$/.test(ipToCheck)) {
       // Allow loopback for self-hosted feeds (but warn)
-      if (hostname.startsWith('127.') || hostname === '::1') {
+      if (ipToCheck.startsWith('127.') || ipToCheck === '::1') {
         return { safe: false, reason: 'Loopback address not allowed' };
       }
 
       // Allow private IPs (self-hosted feeds) but warn
-      if (isPrivateIP(hostname)) {
+      if (isPrivateIP(ipToCheck)) {
         return { safe: true, warning: 'Private IP address' };
       }
 
