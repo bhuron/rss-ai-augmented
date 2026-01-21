@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, memo, useMemo } from 'react';
 import { sanitizeHtml, stripHtml } from '../utils/sanitizeHtml.js';
+import ArticleCard from './ArticleCard.jsx';
 
 function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
   const observerRef = useRef(null);
@@ -8,11 +9,6 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
   const [hasInteracted, setHasInteracted] = useState(false);
   const prevArticlesLengthRef = useRef(0);
   const prevCategoriesRef = useRef(null);
-
-  // Helper to detect YouTube videos
-  const isYouTubeVideo = (link) => {
-    return link?.includes('youtube.com/watch') || link?.includes('youtu.be/');
-  };
 
   // Build navigation list based on view type
   const navigationList = useMemo(() => {
@@ -232,76 +228,20 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
     return (
       <div className="article-list">
         {articles.map(article => (
-          <div
+          <ArticleCard
             key={article.id}
-            ref={(el) => setArticleRef(article.id, el)}
-            data-article-id={article.id}
-            data-is-read={article.is_read}
-            className={`article-card ${article.is_read ? 'read' : ''} ${navigationList.indexOf(article) === selectedIndex ? 'selected' : ''}`}
-          >
-            <div 
-              className="article-content-wrapper"
-              onClick={() => {
-                window.open(article.link, '_blank');
-                if (!article.is_read) {
-                  onMarkAsRead(article.id, true);
-                }
-              }}
-            >
-              <div className="article-text">
-                <h3>{stripHtml(article.title)}</h3>
-                <div className="article-meta">
-                  {stripHtml(article.feed_title)} • {new Date(article.pub_date).toLocaleDateString()}
-                </div>
-                <div className="article-content">
-                  {stripHtml(article.content || '').substring(0, 200)}...
-                </div>
-              </div>
-              {article.image_url && (
-                <div className="article-image-container">
-                  <img 
-                    src={article.image_url.includes('img.youtube.com') || article.image_url.includes('i.ytimg.com') 
-                      ? article.image_url 
-                      : `/api/image-proxy?url=${encodeURIComponent(article.image_url)}`}
-                    alt="" 
-                    className="article-image" 
-                    onError={(e) => e.target.style.display = 'none'}
-                  />
-                  {isYouTubeVideo(article.link) && (
-                    <div className="video-play-overlay">
-                      <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
-                        <path d="M8 5v14l11-7z"/>
-                      </svg>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-            <div className="article-actions">
-              <button
-                className={`save-btn ${article.is_saved ? 'saved' : ''}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleSaved(article.id, !article.is_saved);
-                }}
-                title={article.is_saved ? 'Remove from read later' : 'Read later'}
-              >
-                <svg width="12" height="16" viewBox="0 0 12 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M1 0.5C0.723858 0.5 0.5 0.723858 0.5 1V15.5L6 12L11.5 15.5V1C11.5 0.723858 11.2761 0.5 11 0.5H1Z" stroke="currentColor" fill={article.is_saved ? 'currentColor' : 'none'}/>
-                </svg>
-              </button>
-              <button
-                className="mark-read-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMarkAsRead(article.id, !article.is_read);
-                }}
-                title={article.is_read ? 'Mark as unread' : 'Mark as read'}
-              >
-                {article.is_read ? '✓' : '○'}
-              </button>
-            </div>
-          </div>
+            article={article}
+            isSelected={navigationList.indexOf(article) === selectedIndex}
+            onClick={() => {
+              window.open(article.link, '_blank');
+              if (!article.is_read) {
+                onMarkAsRead(article.id, true);
+              }
+            }}
+            onToggleSaved={onToggleSaved}
+            onMarkAsRead={onMarkAsRead}
+            setRef={setArticleRef}
+          />
         ))}
       </div>
     );
@@ -396,74 +336,20 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
               <p>{category.description}</p>
             </div>
             {categoryArticles.map((article, articleIndex) => (
-              <div
+              <ArticleCard
                 key={`${catIndex}-${article.id}`}
-                ref={(el) => setArticleRef(article.id, el)}
-                data-article-id={article.id}
-                data-is-read={article.is_read}
-                className={`article-card ${article.is_read ? 'read' : ''} ${articleIndexMap.get(article.id) === selectedIndex ? 'selected' : ''}`}
-              >
-                <div 
-                  className="article-content-wrapper"
-                  onClick={() => {
-                    window.open(article.link, '_blank');
-                    if (!article.is_read) {
-                      onMarkAsRead(article.id, true);
-                    }
-                  }}
-                >
-                  <div className="article-text">
-                    <h3>{stripHtml(article.title)}</h3>
-                    <div className="article-meta">
-                      {stripHtml(article.feed_title)} • {new Date(article.pub_date).toLocaleDateString()}
-                    </div>
-                    <div className="article-content">
-                      {stripHtml(article.content || '').substring(0, 200)}...
-                    </div>
-                  </div>
-                  {article.image_url && (
-                    <div className="article-image-container">
-                      <img 
-                        src={`/api/image-proxy?url=${encodeURIComponent(article.image_url)}`}
-                        alt="" 
-                        className="article-image" 
-                        onError={(e) => e.target.style.display = 'none'}
-                      />
-                      {isYouTubeVideo(article.link) && (
-                        <div className="video-play-overlay">
-                          <svg width="48" height="48" viewBox="0 0 24 24" fill="white">
-                            <path d="M8 5v14l11-7z"/>
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <div className="article-actions">
-                  <button
-                    className={`save-btn ${article.is_saved ? 'saved' : ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleSaved(article.id, !article.is_saved);
-                    }}
-                    title={article.is_saved ? 'Remove from read later' : 'Read later'}
-                  >
-                    <svg width="12" height="16" viewBox="0 0 12 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M1 0.5C0.723858 0.5 0.5 0.723858 0.5 1V15.5L6 12L11.5 15.5V1C11.5 0.723858 11.2761 0.5 11 0.5H1Z" stroke="currentColor" fill={article.is_saved ? 'currentColor' : 'none'}/>
-                    </svg>
-                  </button>
-                  <button
-                    className="mark-read-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onMarkAsRead(article.id, !article.is_read);
-                    }}
-                    title={article.is_read ? 'Mark as unread' : 'Mark as read'}
-                  >
-                    {article.is_read ? '✓' : '○'}
-                  </button>
-                </div>
-              </div>
+                article={article}
+                isSelected={articleIndexMap.get(article.id) === selectedIndex}
+                onClick={() => {
+                  window.open(article.link, '_blank');
+                  if (!article.is_read) {
+                    onMarkAsRead(article.id, true);
+                  }
+                }}
+                onToggleSaved={onToggleSaved}
+                onMarkAsRead={onMarkAsRead}
+                setRef={setArticleRef}
+              />
             ))}
           </div>
         );
