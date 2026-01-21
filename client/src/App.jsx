@@ -1,11 +1,14 @@
 import React, { useState, useEffect, lazy, Suspense, useCallback } from 'react';
+import { useFeedOperations } from './hooks/useFeedOperations.js';
 import FeedList from './components/FeedList';
 import ArticleList from './components/ArticleList';
 import Toolbar from './components/Toolbar';
 const SettingsModal = lazy(() => import('./components/SettingsModal'));
 
 function App() {
-  const [feeds, setFeeds] = useState([]);
+  // Feed operations hook
+  const { feeds, fetchFeeds, addFeed, deleteFeed, syncFeed, renameFeed, exportFeeds, importFeeds } = useFeedOperations();
+
   const [articles, setArticles] = useState([]);
   const [allArticles, setAllArticles] = useState([]); // Store all articles for counts
   const [selectedFeed, setSelectedFeed] = useState(null);
@@ -125,44 +128,6 @@ function App() {
     fetchArticles();
   }, [fetchArticles]);
 
-  const fetchFeeds = async () => {
-    const res = await fetch('/api/feeds');
-    const data = await res.json();
-    setFeeds(data);
-  };
-
-  const addFeed = useCallback(async (url) => {
-    await fetch('/api/feeds', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url })
-    });
-    fetchFeeds();
-  }, []);
-
-  const deleteFeed = useCallback(async (id) => {
-    await fetch(`/api/feeds/${id}`, { method: 'DELETE' });
-    fetchFeeds();
-    if (selectedFeed === id) setSelectedFeed(null);
-  }, [selectedFeed]);
-
-  const syncFeed = useCallback(async (id) => {
-    await fetch(`/api/feeds/${id}/sync`, { method: 'POST' });
-    fetchArticles();
-  }, []);
-
-  const renameFeed = useCallback(async (id, newTitle) => {
-    setFeeds(prev => prev.map(f => 
-      f.id === id ? { ...f, title: newTitle } : f
-    ));
-    
-    await fetch(`/api/feeds/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: newTitle })
-    });
-  }, []);
-
   const syncAllFeeds = useCallback(async (userInitiated = false) => {
     setSyncing(true);
     try {
@@ -200,7 +165,7 @@ function App() {
 
       // If user-initiated (pressed 'r'), also refresh the visible article list
       if (userInitiated) {
-        fetchArticles();
+        await fetchArticles();
       }
 
     } catch (error) {
@@ -209,26 +174,6 @@ function App() {
       setSyncing(false);
     }
   }, [fetchArticles]);
-
-  const exportFeeds = useCallback(async () => {
-    window.open('/api/feeds/export', '_blank');
-  }, []);
-
-  const importFeeds = useCallback(async (opmlContent) => {
-    try {
-      const res = await fetch('/api/feeds/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ opml: opmlContent })
-      });
-      const result = await res.json();
-      alert(`Import complete: ${result.imported} feeds imported, ${result.failed} failed`);
-      fetchFeeds();
-      fetchArticles();
-    } catch (error) {
-      alert('Import failed: ' + error.message);
-    }
-  }, []);
 
   const markAsRead = useCallback(async (id, isRead) => {
     // Update server
@@ -395,6 +340,19 @@ function App() {
     setLoading(false);
   }, [articles]);
 
+  // Wrapper functions for feed operations that need App callbacks
+  const handleDeleteFeed = useCallback(async (id) => {
+    await deleteFeed(id, selectedFeed, setSelectedFeed, fetchArticles);
+  }, [deleteFeed, selectedFeed, fetchArticles]);
+
+  const handleSyncFeed = useCallback(async (id) => {
+    await syncFeed(id, fetchArticles);
+  }, [syncFeed, fetchArticles]);
+
+  const handleImportFeeds = useCallback(async (opmlContent) => {
+    await importFeeds(opmlContent, fetchArticles);
+  }, [importFeeds, fetchArticles]);
+
   return (
     <div className="app">
       <button 
@@ -418,8 +376,8 @@ function App() {
         }}
         onCloseSidebar={() => setSidebarOpen(false)}
         onAddFeed={addFeed}
-        onDeleteFeed={deleteFeed}
-        onSyncFeed={syncFeed}
+        onDeleteFeed={handleDeleteFeed}
+        onSyncFeed={handleSyncFeed}
         onRenameFeed={renameFeed}
         unreadCounts={unreadCounts}
         sidebarOpen={sidebarOpen}
@@ -454,7 +412,7 @@ function App() {
             isOpen={showSettings}
             onClose={() => setShowSettings(false)}
             onExport={exportFeeds}
-            onImport={importFeeds}
+            onImport={handleImportFeeds}
           />
         )}
       </Suspense>
