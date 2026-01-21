@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense, useCallback } from 'react';
 import FeedList from './components/FeedList';
 import ArticleList from './components/ArticleList';
 import Toolbar from './components/Toolbar';
-import SettingsModal from './components/SettingsModal';
+const SettingsModal = lazy(() => import('./components/SettingsModal'));
 
 function App() {
   const [feeds, setFeeds] = useState([]);
@@ -17,15 +17,15 @@ function App() {
   const [categories, setCategories] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleSelectFeed = (feedId) => {
+  const handleSelectFeed = useCallback((feedId) => {
     setSelectedFeed(feedId);
     setShowSavedOnly(false);
-  };
+  }, []);
 
-  const handleSelectSaved = () => {
+  const handleSelectSaved = useCallback(() => {
     setSelectedFeed(null);
     setShowSavedOnly(true);
-  };
+  }, []);
 
   useEffect(() => {
     fetchFeeds();
@@ -127,27 +127,27 @@ function App() {
     setAllArticles(allData);
   };
 
-  const addFeed = async (url) => {
+  const addFeed = useCallback(async (url) => {
     await fetch('/api/feeds', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url })
     });
     fetchFeeds();
-  };
+  }, []);
 
-  const deleteFeed = async (id) => {
+  const deleteFeed = useCallback(async (id) => {
     await fetch(`/api/feeds/${id}`, { method: 'DELETE' });
     fetchFeeds();
     if (selectedFeed === id) setSelectedFeed(null);
-  };
+  }, [selectedFeed]);
 
-  const syncFeed = async (id) => {
+  const syncFeed = useCallback(async (id) => {
     await fetch(`/api/feeds/${id}/sync`, { method: 'POST' });
     fetchArticles();
-  };
+  }, []);
 
-  const renameFeed = async (id, newTitle) => {
+  const renameFeed = useCallback(async (id, newTitle) => {
     setFeeds(prev => prev.map(f => 
       f.id === id ? { ...f, title: newTitle } : f
     ));
@@ -157,9 +157,9 @@ function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: newTitle })
     });
-  };
+  }, []);
 
-  const syncAllFeeds = async () => {
+  const syncAllFeeds = useCallback(async () => {
     setSyncing(true);
     try {
       const response = await fetch('/api/feeds/sync-all', { method: 'POST' });
@@ -199,13 +199,13 @@ function App() {
     } finally {
       setSyncing(false);
     }
-  };
+  }, []);
 
-  const exportFeeds = async () => {
+  const exportFeeds = useCallback(async () => {
     window.open('/api/feeds/export', '_blank');
-  };
+  }, []);
 
-  const importFeeds = async (opmlContent) => {
+  const importFeeds = useCallback(async (opmlContent) => {
     try {
       const res = await fetch('/api/feeds/import', {
         method: 'POST',
@@ -219,9 +219,9 @@ function App() {
     } catch (error) {
       alert('Import failed: ' + error.message);
     }
-  };
+  }, []);
 
-  const markAsRead = async (id, isRead) => {
+  const markAsRead = useCallback(async (id, isRead) => {
     // Update server
     await fetch(`/api/articles/${id}/read`, {
       method: 'PATCH',
@@ -234,12 +234,12 @@ function App() {
     setArticles(prev => prev.map(a => 
       a.id === id ? { ...a, is_read: isRead } : a
     ));
-    setAllArticles(prev => prev.map(a => 
+    setAllArticles(prev => prev.map(a =>
       a.id === id ? { ...a, is_read: isRead } : a
     ));
-  };
+  }, []);
 
-  const toggleSaved = async (id, isSaved) => {
+  const toggleSaved = useCallback(async (id, isSaved) => {
     // Update server
     await fetch(`/api/articles/${id}/saved`, {
       method: 'PATCH',
@@ -251,12 +251,12 @@ function App() {
     setArticles(prev => prev.map(a => 
       a.id === id ? { ...a, is_saved: isSaved } : a
     ));
-    setAllArticles(prev => prev.map(a => 
+    setAllArticles(prev => prev.map(a =>
       a.id === id ? { ...a, is_saved: isSaved } : a
     ));
-  };
+  }, []);
 
-  const markAllAsRead = async () => {
+  const markAllAsRead = useCallback(async () => {
     const unreadIds = articles.filter(a => !a.is_read).map(a => a.id);
     if (unreadIds.length === 0) return;
     
@@ -274,7 +274,7 @@ function App() {
         body: JSON.stringify({ isRead: true })
       })
     ));
-  };
+  }, [articles]);
 
   // Calculate unread counts per feed
   const unreadCounts = React.useMemo(() => {
@@ -288,7 +288,7 @@ function App() {
     return counts;
   }, [allArticles]);
 
-  const sortByAI = async () => {
+  const sortByAI = useCallback(async () => {
     const MAX_ARTICLES = 100;
     const MAX_PER_FEED = 10;
     
@@ -356,9 +356,9 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [articles]);
 
-  const generateDigest = async () => {
+  const generateDigest = useCallback(async () => {
     const MAX_ARTICLES = 30;
     
     if (articles.length > MAX_ARTICLES) {
@@ -384,7 +384,7 @@ function App() {
       alert('Digest generation failed: ' + error.message);
     }
     setLoading(false);
-  };
+  }, [articles]);
 
   return (
     <div className="app">
@@ -407,13 +407,13 @@ function App() {
           handleSelectSaved();
           setSidebarOpen(false);
         }}
+        onCloseSidebar={() => setSidebarOpen(false)}
         onAddFeed={addFeed}
         onDeleteFeed={deleteFeed}
         onSyncFeed={syncFeed}
         onRenameFeed={renameFeed}
         unreadCounts={unreadCounts}
         sidebarOpen={sidebarOpen}
-        onCloseSidebar={() => setSidebarOpen(false)}
       />
       <div className="main-content">
         <Toolbar
@@ -439,12 +439,16 @@ function App() {
         )}
         <ArticleList articles={articles} onMarkAsRead={markAsRead} onToggleSaved={toggleSaved} categories={categories} />
       </div>
-      <SettingsModal 
-        isOpen={showSettings} 
-        onClose={() => setShowSettings(false)}
-        onExport={exportFeeds}
-        onImport={importFeeds}
-      />
+      <Suspense fallback={null}>
+        {showSettings && (
+          <SettingsModal
+            isOpen={showSettings}
+            onClose={() => setShowSettings(false)}
+            onExport={exportFeeds}
+            onImport={importFeeds}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }

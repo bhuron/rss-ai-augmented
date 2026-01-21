@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo, useMemo } from 'react';
 import { sanitizeHtml, stripHtml } from '../utils/sanitizeHtml.js';
 
 function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
@@ -13,7 +13,7 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
   };
 
   // Build navigation list based on view type
-  const getNavigationList = () => {
+  const navigationList = useMemo(() => {
     if (!categories || categories.length === 0) {
       return articles;
     }
@@ -21,7 +21,7 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
     const ordered = [];
     const articleMap = new Map(articles.map(a => [a.id, a]));
     const usedIds = new Set();
-    
+
     categories.forEach(category => {
       category.articleIds?.forEach(id => {
         const article = articleMap.get(id);
@@ -31,24 +31,25 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
         }
       });
     });
-    
+
     // Add any articles not in categories at the end
     articles.forEach(article => {
       if (!usedIds.has(article.id)) {
         ordered.push(article);
       }
     });
-    
-    return ordered;
-  };
 
-  const navigationList = getNavigationList();
-  
+    return ordered;
+  }, [articles, categories]);
+
   // Create index map for fast lookups
-  const articleIndexMap = new Map();
-  navigationList.forEach((article, index) => {
-    articleIndexMap.set(article.id, index);
-  });
+  const articleIndexMap = useMemo(() => {
+    const map = new Map();
+    navigationList.forEach((article, index) => {
+      map.set(article.id, index);
+    });
+    return map;
+  }, [navigationList]);
 
   useEffect(() => {
     // Reset selection to first unread article when articles or categories change
@@ -75,13 +76,11 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
 
   useEffect(() => {
     // Keyboard shortcuts for article navigation
-    const navList = getNavigationList();
-    
     const handleKeyDown = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      
-      const currentArticle = navList[selectedIndex];
-      const maxIndex = navList.length - 1;
+
+      const currentArticle = navigationList[selectedIndex];
+      const maxIndex = navigationList.length - 1;
       
       if (e.key === 'j' || e.key === 'ArrowDown' || e.key === 'n') {
         e.preventDefault();
@@ -137,7 +136,7 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [articles, categories, selectedIndex, onMarkAsRead]);
+  }, [navigationList, selectedIndex, onMarkAsRead]);
 
   useEffect(() => {
     // Reset interaction state when articles or categories change
@@ -299,8 +298,10 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
   }
 
   // Group articles by category
-  const articleMap = new Map(articles.map(a => [a.id, a]));
-  
+  const articleMap = useMemo(() => {
+    return new Map(articles.map(a => [a.id, a]));
+  }, [articles]);
+
   return (
     <div className="article-list">
       {categories.map((category, catIndex) => {
@@ -461,4 +462,4 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
   );
 }
 
-export default ArticleList;
+export default memo(ArticleList);

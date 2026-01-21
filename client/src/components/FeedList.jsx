@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 
 function FeedList({ feeds, selectedFeed, showSavedOnly, onSelectFeed, onSelectSaved, onAddFeed, onDeleteFeed, onSyncFeed, onRenameFeed, unreadCounts, sidebarOpen, onCloseSidebar }) {
   const [newFeedUrl, setNewFeedUrl] = useState('');
@@ -104,4 +104,4 @@ function FeedList({ feeds, selectedFeed, showSavedOnly, onSelectFeed, onSelectSa
   );
 }
 
-export default FeedList;
+export default memo(FeedList);

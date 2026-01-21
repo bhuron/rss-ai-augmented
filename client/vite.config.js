@@ -1,8 +1,16 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    visualizer({
+      filename: 'dist/stats.html',
+      gzipSize: true,
+      brotliSize: true
+    })
+  ],
   server: {
     port: 5173,
     host: '0.0.0.0', // Listen on all network interfaces
@@ -16,5 +24,16 @@ export default defineConfig({
         changeOrigin: true // Needed for external clients
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'utils': ['dompurify']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000
   }
 });

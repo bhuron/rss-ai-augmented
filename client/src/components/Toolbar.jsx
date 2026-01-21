@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 
 function Toolbar({ onSortByAI, onToggleUnread, showUnreadOnly, hasArticles, onOpenSettings, onMarkAllAsRead, hasUnread }) {
   return (
@@ -36,4 +36,4 @@ function Toolbar({ onSortByAI, onToggleUnread, showUnreadOnly, hasArticles, onOp
   );
 }
 
-export default Toolbar;
+export default memo(Toolbar);
