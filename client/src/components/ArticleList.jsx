@@ -2,131 +2,19 @@ import { useEffect, useRef, useState, memo, useMemo } from 'react';
 import { sanitizeHtml, stripHtml } from '../utils/sanitizeHtml.js';
 import ArticleCard from './ArticleCard.jsx';
 import { useAutoMarkAsRead } from '../hooks/useAutoMarkAsRead.js';
+import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation.js';
 
 function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const prevArticlesLengthRef = useRef(0);
-  const prevCategoriesRef = useRef(null);
-
-  // Build navigation list based on view type
-  const navigationList = useMemo(() => {
-    if (!categories || categories.length === 0) {
-      return articles;
-    }
-    // In category view, build flat list in category order
-    const ordered = [];
-    const articleMap = new Map(articles.map(a => [a.id, a]));
-    const usedIds = new Set();
-
-    categories.forEach(category => {
-      category.articleIds?.forEach(id => {
-        const article = articleMap.get(id);
-        if (article && !usedIds.has(id)) {
-          ordered.push(article);
-          usedIds.add(id);
-        }
-      });
-    });
-
-    // Add any articles not in categories at the end
-    articles.forEach(article => {
-      if (!usedIds.has(article.id)) {
-        ordered.push(article);
-      }
-    });
-
-    return ordered;
-  }, [articles, categories]);
-
-  // Create index map for fast lookups
-  const articleIndexMap = useMemo(() => {
-    const map = new Map();
-    navigationList.forEach((article, index) => {
-      map.set(article.id, index);
-    });
-    return map;
-  }, [navigationList]);
-
-  useEffect(() => {
-    // Reset selection to first unread article only when article count actually changes
-    // (e.g., new articles loaded) or when categories change (AI sort applied)
-    const currentLength = articles.length;
-    const categoriesChanged = prevCategoriesRef.current !== categories;
-
-    if (currentLength !== prevArticlesLengthRef.current || categoriesChanged) {
-      const firstUnreadIndex = navigationList.findIndex(a => !a.is_read);
-      setSelectedIndex(firstUnreadIndex >= 0 ? firstUnreadIndex : 0);
-      prevArticlesLengthRef.current = currentLength;
-      prevCategoriesRef.current = categories;
-    }
-  }, [articles.length, categories]);
+  // Keyboard navigation hook
+  const { selectedIndex, navigationList, articleIndexMap, openArticle } = useKeyboardNavigation({
+    articles,
+    categories,
+    onMarkAsRead,
+    onToggleSaved
+  });
 
   // Auto-mark-as-read hook
   const { setArticleRef } = useAutoMarkAsRead({ articles, onMarkAsRead });
-
-  useEffect(() => {
-    // Keyboard shortcuts for article navigation
-    const handleKeyDown = (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-      const currentArticle = navigationList[selectedIndex];
-      const maxIndex = navigationList.length - 1;
-      
-      if (e.key === 'j' || e.key === 'ArrowDown' || e.key === 'n') {
-        e.preventDefault();
-        // Mark current as read before moving
-        if (currentArticle && !currentArticle.is_read) {
-          onMarkAsRead(currentArticle.id, true);
-        }
-        if (selectedIndex < maxIndex) {
-          const newIndex = selectedIndex + 1;
-          setSelectedIndex(newIndex);
-          // For categorized view, find the selected element by class
-          setTimeout(() => {
-            const selectedElement = document.querySelector('.article-card.selected');
-            selectedElement?.scrollIntoView({ behavior: 'auto', block: 'center' });
-          }, 0);
-        }
-      } else if (e.key === 'k' || e.key === 'ArrowUp') {
-        e.preventDefault();
-        if (selectedIndex > 0) {
-          const newIndex = selectedIndex - 1;
-          setSelectedIndex(newIndex);
-          // For categorized view, find the selected element by class
-          setTimeout(() => {
-            const selectedElement = document.querySelector('.article-card.selected');
-            selectedElement?.scrollIntoView({ behavior: 'auto', block: 'center' });
-          }, 0);
-        }
-      } else if (e.key === 'Enter' || e.key === 'o') {
-        e.preventDefault();
-        if (currentArticle) {
-          window.open(currentArticle.link, '_blank');
-          if (!currentArticle.is_read) {
-            onMarkAsRead(currentArticle.id, true);
-          }
-        }
-      } else if (e.key === 'v') {
-        e.preventDefault();
-        if (currentArticle) {
-          window.open(currentArticle.link, '_blank');
-        }
-      } else if (e.key === 'm') {
-        e.preventDefault();
-        if (currentArticle) {
-          onMarkAsRead(currentArticle.id, !currentArticle.is_read);
-        }
-      } else if (e.key === 's') {
-        e.preventDefault();
-        if (currentArticle) {
-          onToggleSaved(currentArticle.id, !currentArticle.is_saved);
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [navigationList, selectedIndex, onMarkAsRead]);
 
   if (!articles || articles.length === 0) {
     return (
@@ -145,12 +33,7 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
             key={article.id}
             article={article}
             isSelected={navigationList.indexOf(article) === selectedIndex}
-            onClick={() => {
-              window.open(article.link, '_blank');
-              if (!article.is_read) {
-                onMarkAsRead(article.id, true);
-              }
-            }}
+            onClick={() => openArticle(article)}
             onToggleSaved={onToggleSaved}
             onMarkAsRead={onMarkAsRead}
             setRef={setArticleRef}
@@ -253,12 +136,7 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
                 key={`${catIndex}-${article.id}`}
                 article={article}
                 isSelected={articleIndexMap.get(article.id) === selectedIndex}
-                onClick={() => {
-                  window.open(article.link, '_blank');
-                  if (!article.is_read) {
-                    onMarkAsRead(article.id, true);
-                  }
-                }}
+                onClick={() => openArticle(article)}
                 onToggleSaved={onToggleSaved}
                 onMarkAsRead={onMarkAsRead}
                 setRef={setArticleRef}
