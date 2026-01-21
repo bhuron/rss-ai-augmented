@@ -15,13 +15,29 @@ cd client && npm install && npm run dev
 
 ### Production Build
 ```bash
-# Frontend only
+# Frontend with bundle analysis
+cd client && npm run build:analyze
+
+# Frontend production build only
 cd client && npm run build
 ```
 
 ### Run Server in Production
 ```bash
 cd server && npm start
+```
+
+### Process Management (PM2)
+```bash
+# Start both client and server with PM2
+npm start
+
+# Other PM2 commands
+npm stop
+npm restart
+npm reload
+npm logs
+npm status
 ```
 
 ## Architecture Overview
@@ -33,7 +49,9 @@ This is a **full-stack RSS reader with AI-powered sorting**. The architecture is
 - **Database**: Simple JSON file (`server/database.json`)
 - **AI**: Provider-agnostic LLM integration (OpenAI, Anthropic, OpenRouter, Ollama, custom)
 
-The client proxies all `/api` requests to the backend via Vite's proxy configuration.
+The client proxies all `/api` requests to the backend via Vite's proxy configuration (see `client/vite.config.js`).
+
+**Important**: In production, the client's `npm run build` outputs static files to `client/dist/`. You'll need to serve these with a web server and configure it to proxy `/api` requests to the backend.
 
 ## Key Architectural Patterns
 
@@ -52,6 +70,7 @@ The AI service (`server/src/services/ai.js`) is provider-agnostic. Configuration
 - No API keys in environment variables - all configured via web UI
 - Article sanitization removes control characters and non-ASCII to prevent JSON encoding issues
 - Fallback handling: if AI sorting fails, returns original order with generic category
+- **Smart batching**: Limits to 100 articles max, maximum 10 per feed to prevent high-volume feeds from dominating the sort results
 
 ### RSS Processing
 Enhanced RSS parser (`server/src/services/rss.js`) with special handling:
@@ -80,6 +99,13 @@ SettingsModal.jsx - LLM provider configuration UI
 
 ## Important Implementation Details
 
+### URL Normalization
+The database uses URL normalization for duplicate detection in `server/src/services/database.js`:
+- Removes tracking parameters (utm_*, fbclid, gclid, etc.)
+- Preserves YouTube video IDs for thumbnail generation
+- Normalized URLs stored in `normalized_url` field
+- Duplicate check: articles with same `normalized_url` AND `feed_id` are considered duplicates
+
 ### Article Content Handling
 - Article titles must be sanitized before sending to AI (remove control chars, backslashes, non-ASCII)
 - Image URLs are proxied through `/api/image-proxy?url=` to avoid CORS issues
@@ -91,15 +117,33 @@ SettingsModal.jsx - LLM provider configuration UI
 - Duplicate articles detected within same feed using URL normalization
 - YouTube video IDs are preserved for thumbnail generation
 
-### Client-Side Filtering
+### Keyboard Navigation & Auto-Mark-as-Read
+The app uses IntersectionObserver for smart article tracking (see `ArticleList.jsx`):
+- Articles are NOT marked as read until user interacts (scrolls or clicks)
+- After first interaction, scrolling past an article marks it as read after 500ms delay
+- Keyboard shortcuts (j/k, Enter) mark the previous/current article as read when navigating
+- This prevents accidental marking when just viewing the page
+
+### Client-Side Filtering & Data Fetching
 Articles are filtered client-side rather than server-side for performance:
 - Filter by `is_read`, `is_saved`, or by `feed_id`
 - The server returns all articles, client applies filters
+- **Parallel fetching**: Client fetches both filtered articles AND all articles simultaneously (see `App.jsx`) to maintain accurate unread counts
+
+**Why parallel fetching?** When filtering by unread/saved, we still need the full article list to show accurate counts in the sidebar and feed list.
 
 ### Settings Storage Pattern
 All settings (including LLM config) are stored in `database.json` with prefixes:
 - `llm_provider`, `llm_apiKey`, `llm_model`, `llm baseUrl`
 - Settings CRUD is in `server/src/routes/settings.js`
+
+### Security: SSRF Protection
+The app includes comprehensive SSRF (Server-Side Request Forgery) protection in `server/src/services/url-validator.js`:
+- **Private IP blocking**: Blocks requests to 127.0.0.0/8, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+- **Cloud metadata blocking**: Blocks AWS, GCP, Azure metadata endpoints
+- **DNS cache with TTL**: Prevents DNS rebinding attacks
+- **Protocol restriction**: Only HTTP/HTTPS allowed
+- Image proxy endpoint applies same validation before fetching external images
 
 ## Environment Configuration
 
@@ -107,6 +151,7 @@ Create `server/.env` (see `server/.env.example`):
 
 ```bash
 PORT=3000
+CORS_ORIGINS=http://localhost:5173  # Comma-separated list of allowed origins
 BASIC_AUTH_USER=          # Optional - leave empty to disable
 BASIC_AUTH_PASSWORD=      # Optional - leave empty to disable
 INCLUDE_SHORTS=false      # Include YouTube Shorts in feeds
@@ -135,5 +180,14 @@ const UNREAD_RETENTION_DAYS = 60;
 ### Debugging Feed Sync Issues
 - Check server console for feed-specific errors
 - Look for 15-second timeouts on slow feeds
-- Verify URL normalization in `normalizeUrl()` function
+- Verify URL normalization in `server/src/services/database.js` `normalizeUrl()` function
 - YouTube thumbnails use pattern: `img.youtube.com/vi/{videoId}/hqdefault.jpg`
+- For encoding issues, check `server/src/services/rss.js` iconv-lite usage
+- Use the SSE progress updates to see which feeds are failing during sync-all
+
+### Understanding AI Sort Batching
+When AI sorting processes articles:
+- Maximum 100 articles total
+- Maximum 10 articles per feed (prevents large feeds from dominating)
+- Articles are selected from most recent first
+- If you have more than 100 articles, only the newest ones will be sorted
