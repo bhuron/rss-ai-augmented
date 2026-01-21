@@ -3,9 +3,62 @@ import { promisify } from 'util';
 
 const dnsLookup = promisify(dns.lookup);
 
-// DNS cache with TTL (5 minutes)
-const dnsCache = new Map();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// LRU Cache with maximum size to prevent unbounded growth
+class LRUCache {
+  constructor(maxSize = 1000) {
+    this.maxSize = maxSize;
+    this.cache = new Map(); // Map maintains insertion order
+  }
+
+  get(key) {
+    if (!this.cache.has(key)) return null;
+
+    // Move to end (most recently used)
+    const value = this.cache.get(key);
+    this.cache.delete(key);
+    this.cache.set(key, value);
+    return value;
+  }
+
+  set(key, value) {
+    // Remove existing entry to update position
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    }
+
+    // Add to end (most recently used)
+    this.cache.set(key, value);
+
+    // Evict least recently used (first entry) if over limit
+    if (this.cache.size > this.maxSize) {
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+    }
+  }
+
+  has(key) {
+    return this.cache.has(key);
+  }
+
+  // For periodic cleanup of expired entries
+  cleanExpired(ttl) {
+    const now = Date.now();
+    for (const [key, value] of this.cache.entries()) {
+      if (now - value.timestamp >= ttl) {
+        this.cache.delete(key);
+      }
+    }
+  }
+
+  get size() {
+    return this.cache.size;
+  }
+}
+
+// DNS cache with LRU eviction and TTL (5 minutes)
+const dnsCache = new LRUCache(1000);
 
 // Blocked hostnames (string-based, no DNS needed)
 const BLOCKED_HOSTNAMES = [
@@ -243,10 +296,5 @@ export async function validateFeedUrl(urlString) {
  * Clear expired cache entries (call periodically)
  */
 export function cleanCache() {
-  const now = Date.now();
-  for (const [hostname, data] of dnsCache.entries()) {
-    if (now - data.timestamp >= CACHE_TTL) {
-      dnsCache.delete(hostname);
-    }
-  }
+  dnsCache.cleanExpired(CACHE_TTL);
 }

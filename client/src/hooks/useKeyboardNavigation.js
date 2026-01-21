@@ -23,6 +23,7 @@ export function useKeyboardNavigation({ articles, categories, onMarkAsRead, onTo
   const [selectedIndex, setSelectedIndex] = useState(0);
   const prevArticlesLengthRef = useRef(0);
   const prevCategoriesRef = useRef(null);
+  const timeoutRef = useRef(null);
 
   // Build navigation list based on view type
   const navigationList = useMemo(() => {
@@ -94,7 +95,8 @@ export function useKeyboardNavigation({ articles, categories, onMarkAsRead, onTo
         const newIndex = selectedIndex + 1;
         setSelectedIndex(newIndex);
         // Scroll selected element into view
-        setTimeout(() => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
           const selectedElement = document.querySelector('.article-card.selected');
           selectedElement?.scrollIntoView({ behavior: 'auto', block: 'center' });
         }, 0);
@@ -106,7 +108,8 @@ export function useKeyboardNavigation({ articles, categories, onMarkAsRead, onTo
         const newIndex = selectedIndex - 1;
         setSelectedIndex(newIndex);
         // Scroll selected element into view
-        setTimeout(() => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
           const selectedElement = document.querySelector('.article-card.selected');
           selectedElement?.scrollIntoView({ behavior: 'auto', block: 'center' });
         }, 0);
@@ -147,6 +150,13 @@ export function useKeyboardNavigation({ articles, categories, onMarkAsRead, onTo
       onMarkAsRead(article.id, true);
     }
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   return { selectedIndex, navigationList, articleIndexMap, openArticle };
 }

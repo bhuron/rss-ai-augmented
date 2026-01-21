@@ -273,4 +273,64 @@ describe('useAISorting', () => {
     expect(mockSetArticles).not.toHaveBeenCalled();
     expect(mockSetCategories).not.toHaveBeenCalled();
   });
+
+  it('should handle invalid categories format', async () => {
+    const mockArticles = [{ id: 1, feed_id: 1, title: 'Article 1' }];
+
+    // Server returns valid articles but invalid categories (not an array)
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        articles: mockArticles,
+        categories: 'invalid categories data' // String instead of array
+      })
+    });
+
+    const { result } = renderHook(() =>
+      useAISorting({
+        articles: mockArticles,
+        setArticles: mockSetArticles,
+        setCategories: mockSetCategories
+      })
+    );
+
+    await act(async () => {
+      await result.current.sortByAI();
+    });
+
+    // Should set articles but null out invalid categories
+    expect(mockSetArticles).toHaveBeenCalledWith([mockArticles[0]]);
+    expect(mockSetCategories).toHaveBeenCalledWith(null);
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('should handle missing categories field', async () => {
+    const mockArticles = [{ id: 1, feed_id: 1, title: 'Article 1' }];
+
+    // Server returns valid articles but no categories field
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        articles: mockArticles
+        // No categories field
+      })
+    });
+
+    const { result } = renderHook(() =>
+      useAISorting({
+        articles: mockArticles,
+        setArticles: mockSetArticles,
+        setCategories: mockSetCategories
+      })
+    );
+
+    await act(async () => {
+      await result.current.sortByAI();
+    });
+
+    // Should set articles but categories as null
+    expect(mockSetArticles).toHaveBeenCalledWith([mockArticles[0]]);
+    expect(mockSetCategories).toHaveBeenCalledWith(null);
+    expect(result.current.loading).toBe(false);
+  });
 });

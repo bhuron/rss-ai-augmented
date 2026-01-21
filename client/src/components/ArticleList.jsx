@@ -5,18 +5,28 @@ import { useAutoMarkAsRead } from '../hooks/useAutoMarkAsRead.js';
 import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation.js';
 
 function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
+  // Validate inputs to prevent rendering errors
+  const validArticles = Array.isArray(articles) ? articles : [];
+  const validCategories = categories && Array.isArray(categories) ? categories : null;
+
   // Keyboard navigation hook
   const { selectedIndex, navigationList, articleIndexMap, openArticle } = useKeyboardNavigation({
-    articles,
-    categories,
+    articles: validArticles,
+    categories: validCategories,
     onMarkAsRead,
     onToggleSaved
   });
 
   // Auto-mark-as-read hook
-  const { setArticleRef } = useAutoMarkAsRead({ articles, onMarkAsRead });
+  const { setArticleRef } = useAutoMarkAsRead({ articles: validArticles, onMarkAsRead });
 
-  if (!articles || articles.length === 0) {
+  // Group articles by category - MUST be before early returns to maintain hooks order
+  const articleMap = useMemo(() => {
+    const safeArticles = validArticles.filter(a => a && typeof a === 'object' && a.id != null);
+    return new Map(safeArticles.map(a => [a.id, a]));
+  }, [validArticles]);
+
+  if (validArticles.length === 0) {
     return (
       <div className="article-list">
         <div className="loading">No articles found</div>
@@ -25,10 +35,10 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
   }
 
   // If no categories, show articles normally
-  if (!categories || categories.length === 0) {
+  if (!validCategories || validCategories.length === 0) {
     return (
       <div className="article-list">
-        {articles.map(article => (
+        {validArticles.filter(a => a && a.id).map(article => (
           <ArticleCard
             key={article.id}
             article={article}
@@ -43,14 +53,9 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
     );
   }
 
-  // Group articles by category
-  const articleMap = useMemo(() => {
-    return new Map(articles.map(a => [a.id, a]));
-  }, [articles]);
-
   return (
     <div className="article-list">
-      {categories.map((category, catIndex) => {
+      {validCategories.map((category, catIndex) => {
         // Special rendering for digest
         if (category.isDigest) {
           // Convert [ID:123] or [ID:123, ID:456, ID:789] references to clickable links
@@ -121,7 +126,7 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
         
         const categoryArticles = category.articleIds
           .map(id => articleMap.get(id))
-          .filter(a => a !== undefined);
+          .filter(a => a && a.id); // Ensure article exists and has valid id
         
         if (categoryArticles.length === 0) return null;
         

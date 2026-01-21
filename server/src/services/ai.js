@@ -153,7 +153,7 @@ IMPORTANT:
     // Map sorted IDs to actual articles
     const sortedArticles = result.sortedIds
       .map(id => articleMap.get(id))
-      .filter(a => a !== undefined);
+      .filter(a => a !== undefined && a !== null && typeof a === 'object');
     
     // If we lost articles, add them back at the end
     if (sortedArticles.length < articles.length) {

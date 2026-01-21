@@ -83,11 +83,17 @@ export function useAISorting({ articles, setArticles, setCategories }) {
         throw new APIError('Invalid response from server', 500);
       }
 
+      // Validate categories before setting
+      if (result.categories && !Array.isArray(result.categories)) {
+        console.warn('Invalid categories format from server, ignoring');
+        result.categories = null;
+      }
+
       // Update with AI-sorted results when ready
       const allArticles = [...result.articles, ...remainingArticles];
 
       setArticles(allArticles);
-      setCategories(result.categories);
+      setCategories(result.categories || null);
     } catch (error) {
       console.error('AI sorting error:', error);
       setError(error);

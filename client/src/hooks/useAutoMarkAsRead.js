@@ -45,9 +45,6 @@ export function useAutoMarkAsRead({ articles, onMarkAsRead }) {
 
   // Intersection observer for auto-mark-as-read
   useEffect(() => {
-    const markedIds = new Set();
-    const timeouts = new Map();
-
     // Create intersection observer to detect when articles are scrolled past
     observerRef.current = new IntersectionObserver(
       (entries) => {
@@ -61,21 +58,21 @@ export function useAutoMarkAsRead({ articles, onMarkAsRead }) {
             const isRead = entry.target.dataset.isRead === 'true';
 
             // Only mark if not already marked and not already read
-            if (!markedIds.has(articleId) && !isRead) {
-              markedIds.add(articleId);
+            if (!markedIds.current.has(articleId) && !isRead) {
+              markedIds.current.add(articleId);
 
               // Clear any existing timeout for this article
-              if (timeouts.has(articleId)) {
-                clearTimeout(timeouts.get(articleId));
+              if (timeouts.current.has(articleId)) {
+                clearTimeout(timeouts.current.get(articleId));
               }
 
               // Mark as read after a short delay
               const timeout = setTimeout(() => {
                 onMarkAsRead(articleId, true);
-                timeouts.delete(articleId);
+                timeouts.current.delete(articleId);
               }, 500);
 
-              timeouts.set(articleId, timeout);
+              timeouts.current.set(articleId, timeout);
             }
           }
         });
@@ -98,7 +95,7 @@ export function useAutoMarkAsRead({ articles, onMarkAsRead }) {
         observerRef.current.disconnect();
       }
       // Clear all pending timeouts
-      timeouts.forEach(timeout => clearTimeout(timeout));
+      timeouts.current.forEach(timeout => clearTimeout(timeout));
     };
   }, [articles, onMarkAsRead, hasInteracted]);
 
