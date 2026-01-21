@@ -12,8 +12,8 @@ router.get('/llm', (req, res) => {
 
     // Security: Never return full API key - return masked version
     if (configKey === 'apiKey') {
-      const key = settings[key];
-      config[configKey] = key ? `${key.slice(0, 7)}...${key.slice(-4)}` : '';
+      const apiKeyValue = settings[key];
+      config[configKey] = apiKeyValue ? `${apiKeyValue.slice(0, 7)}...${apiKeyValue.slice(-4)}` : '';
     } else {
       config[configKey] = settings[key];
     }
