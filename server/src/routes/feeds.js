@@ -1,10 +1,17 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
+import { z } from 'zod';
 import { feedOps } from '../services/database.js';
 import { fetchFeed, syncFeed } from '../services/rss.js';
 import { validateFeedUrl } from '../services/url-validator.js';
 import { convertYouTubeUrl, isYouTubeChannelUrl } from '../services/youtube-url.js';
 import { XMLParser } from 'fast-xml-parser';
+import { validateBody, validateParams, asyncHandler } from '../middleware/validate.js';
+import {
+  AddFeedRequestSchema,
+  RenameFeedRequestSchema,
+  ImportOPMLRequestSchema
+} from '../schemas/api.js';
 
 const router = express.Router();
 
@@ -23,12 +30,8 @@ router.get('/', (req, res) => {
   res.json(feeds);
 });
 
-router.post('/', async (req, res) => {
+router.post('/', validateBody(AddFeedRequestSchema), asyncHandler(async (req, res) => {
   const { url } = req.body;
-
-  if (!url) {
-    return res.status(400).json({ error: 'URL is required' });
-  }
 
   // Convert YouTube channel URLs to RSS feed URLs
   let feedUrl = url;
@@ -64,28 +67,36 @@ router.post('/', async (req, res) => {
   } catch (error) {
     // Don't leak detailed error messages
     console.error(`Failed to add feed ${url}:`, error.message);
-    res.status(400).json({ error: 'Failed to fetch feed. Please check the URL and try again.' });
+    throw error; // asyncHandler will catch this
   }
-});
+}));
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id',
+  validateParams(z.object({ id: z.string().regex(/^\d+$/, 'Invalid feed ID') })),
+  (req, res) => {
   feedOps.delete(parseInt(req.params.id));
   res.json({ success: true });
 });
 
-router.patch('/:id', (req, res) => {
+router.patch('/:id',
+  validateParams(z.object({ id: z.string().regex(/^\d+$/, 'Invalid feed ID') })),
+  validateBody(RenameFeedRequestSchema),
+  (req, res) => {
   const { title } = req.body;
   const feed = feedOps.get(parseInt(req.params.id));
-  
+
   if (!feed) {
     return res.status(404).json({ error: 'Feed not found' });
   }
-  
+
   feedOps.update(parseInt(req.params.id), title);
   res.json({ success: true });
 });
 
-router.post('/:id/sync', syncRateLimiter, async (req, res) => {
+router.post('/:id/sync',
+  validateParams(z.object({ id: z.string().regex(/^\d+$/, 'Invalid feed ID') })),
+  syncRateLimiter,
+  asyncHandler(async (req, res) => {
   const feed = feedOps.get(parseInt(req.params.id));
 
   if (!feed) {
@@ -98,9 +109,9 @@ router.post('/:id/sync', syncRateLimiter, async (req, res) => {
   } catch (error) {
     // Don't leak detailed error messages
     console.error(`Failed to sync feed ${feed.url}:`, error.message);
-    res.status(400).json({ error: 'Failed to sync feed. Please try again later.' });
+    throw error; // asyncHandler will catch this
   }
-});
+}));
 
 router.get('/export', (req, res) => {
   const feeds = feedOps.all();
@@ -120,12 +131,8 @@ ${feeds.map(feed => `    <outline type="rss" text="${feed.title}" xmlUrl="${feed
   res.send(opml);
 });
 
-router.post('/import', async (req, res) => {
+router.post('/import', validateBody(ImportOPMLRequestSchema), asyncHandler(async (req, res) => {
   const { opml } = req.body;
-
-  if (!opml) {
-    return res.status(400).json({ error: 'OPML data is required' });
-  }
 
   try {
     // Configure XML parser with security options to prevent XXE attacks
@@ -221,9 +228,9 @@ router.post('/import', async (req, res) => {
   } catch (error) {
     // Don't leak detailed error messages
     console.error('Import error:', error);
-    res.status(400).json({ error: 'Failed to import feeds. Please check the OPML format.' });
+    throw error; // asyncHandler will catch this
   }
-});
+}));
 
 router.post('/sync-all', syncRateLimiter, async (req, res) => {
   const feeds = feedOps.all();

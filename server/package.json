@@ -17,7 +17,8 @@
     "fast-xml-parser": "^5.3.3",
     "iconv-lite": "^0.7.0",
     "node-fetch": "^3.3.2",
-    "rss-parser": "^3.13.0"
+    "rss-parser": "^3.13.0",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "supertest": "^7.2.2",

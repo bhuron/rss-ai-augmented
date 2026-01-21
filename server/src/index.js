@@ -108,11 +108,40 @@ app.get('/api/image-proxy', async (req, res) => {
   }
 });
 
+// Error handling middleware
+function notFound(req, res, next) {
+  res.status(404).json({ error: 'Not found' });
+}
+
+function errorHandler(err, req, res, next) {
+  // Log error for debugging
+  console.error('Error:', err);
+
+  // Zod validation errors
+  if (err.name === 'ZodError') {
+    return res.status(400).json({
+      error: err.errors[0]?.message || 'Validation failed'
+    });
+  }
+
+  // Other errors
+  const statusCode = err.statusCode || 500;
+  res.status(statusCode).json({
+    error: err.message || 'Internal server error'
+  });
+}
+
 // Routes
 app.use('/api/feeds', feedRoutes);
 app.use('/api/articles', articleRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/settings', settingsRoutes);
+
+// 404 handler (must be after routes)
+app.use(notFound);
+
+// Global error handler (must be last)
+app.use(errorHandler);
 
 const server = app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

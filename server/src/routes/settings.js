@@ -1,5 +1,7 @@
 import express from 'express';
 import { settingsOps } from '../services/database.js';
+import { validateBody } from '../middleware/validate.js';
+import { UpdateLLMSettingsRequestSchema } from '../schemas/api.js';
 
 const router = express.Router();
 
@@ -22,7 +24,7 @@ router.get('/llm', (req, res) => {
   res.json(config);
 });
 
-router.post('/llm', (req, res) => {
+router.post('/llm', validateBody(UpdateLLMSettingsRequestSchema), (req, res) => {
   const { provider, apiKey, baseUrl, model } = req.body;
   
   settingsOps.set('llm_provider', provider);

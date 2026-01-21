@@ -2,6 +2,11 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { articleOps, settingsOps } from '../services/database.js';
 import { sortArticles, generateDigest } from '../services/ai.js';
+import { validateBody, asyncHandler } from '../middleware/validate.js';
+import {
+  AISortRequestSchema,
+  AIDigestRequestSchema
+} from '../schemas/api.js';
 
 const router = express.Router();
 
@@ -27,7 +32,10 @@ function getLLMConfig() {
   return config;
 }
 
-router.post('/sort', aiRateLimiter, async (req, res) => {
+router.post('/sort',
+  validateBody(AISortRequestSchema),
+  aiRateLimiter,
+  asyncHandler(async (req, res) => {
   const { articleIds, criteria } = req.body;
   
   try {
@@ -54,11 +62,14 @@ router.post('/sort', aiRateLimiter, async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('Sort error:', error);
-    res.status(500).json({ error: error.message });
+    throw error; // asyncHandler will catch this
   }
-});
+}));
 
-router.post('/digest', aiRateLimiter, async (req, res) => {
+router.post('/digest',
+  validateBody(AIDigestRequestSchema),
+  aiRateLimiter,
+  asyncHandler(async (req, res) => {
   const { articleIds } = req.body;
   
   try {
@@ -85,8 +96,8 @@ router.post('/digest', aiRateLimiter, async (req, res) => {
     res.json({ digest });
   } catch (error) {
     console.error('Digest error:', error);
-    res.status(500).json({ error: error.message });
+    throw error; // asyncHandler will catch this
   }
-});
+}));
 
 export default router;
