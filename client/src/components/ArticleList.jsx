@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState, memo, useMemo } from 'react';
 import { sanitizeHtml, stripHtml } from '../utils/sanitizeHtml.js';
 import ArticleCard from './ArticleCard.jsx';
+import { useAutoMarkAsRead } from '../hooks/useAutoMarkAsRead.js';
 
 function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
-  const observerRef = useRef(null);
-  const articleRefs = useRef(new Map());
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [hasInteracted, setHasInteracted] = useState(false);
   const prevArticlesLengthRef = useRef(0);
   const prevCategoriesRef = useRef(null);
 
@@ -63,22 +61,8 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
     }
   }, [articles.length, categories]);
 
-  useEffect(() => {
-    // Detect user interaction (scroll or click) to enable auto-mark-as-read
-    const handleInteraction = () => {
-      if (!hasInteracted) {
-        setHasInteracted(true);
-      }
-    };
-
-    window.addEventListener('scroll', handleInteraction, { once: true, passive: true });
-    window.addEventListener('click', handleInteraction, { once: true });
-
-    return () => {
-      window.removeEventListener('scroll', handleInteraction);
-      window.removeEventListener('click', handleInteraction);
-    };
-  }, [hasInteracted]);
+  // Auto-mark-as-read hook
+  const { setArticleRef } = useAutoMarkAsRead({ articles, onMarkAsRead });
 
   useEffect(() => {
     // Keyboard shortcuts for article navigation
@@ -143,77 +127,6 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigationList, selectedIndex, onMarkAsRead]);
-
-  useEffect(() => {
-    // Reset interaction state when articles or categories change
-    setHasInteracted(false);
-  }, [articles.length, categories]);
-
-  useEffect(() => {
-    const markedIds = new Set();
-    const timeouts = new Map();
-
-    // Create intersection observer to detect when articles are scrolled past
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          // Only auto-mark after user has interacted with the page
-          if (!hasInteracted) return;
-
-          // If article has scrolled past the top of viewport and is unread
-          if (entry.boundingClientRect.top < 0 && !entry.isIntersecting) {
-            const articleId = parseInt(entry.target.dataset.articleId);
-            const isRead = entry.target.dataset.isRead === 'true';
-
-            // Only mark if not already marked and not already read
-            if (!markedIds.has(articleId) && !isRead) {
-              markedIds.add(articleId);
-
-              // Clear any existing timeout for this article
-              if (timeouts.has(articleId)) {
-                clearTimeout(timeouts.get(articleId));
-              }
-
-              // Mark as read after a short delay
-              const timeout = setTimeout(() => {
-                onMarkAsRead(articleId, true);
-                timeouts.delete(articleId);
-              }, 500);
-
-              timeouts.set(articleId, timeout);
-            }
-          }
-        });
-      },
-      {
-        threshold: 0,
-        rootMargin: '-50px 0px 0px 0px' // Trigger when article is 50px past top
-      }
-    );
-
-    // Observe all article elements
-    articleRefs.current.forEach((element) => {
-      if (element) {
-        observerRef.current.observe(element);
-      }
-    });
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-      // Clear all pending timeouts
-      timeouts.forEach(timeout => clearTimeout(timeout));
-    };
-  }, [articles, onMarkAsRead, hasInteracted]);
-
-  const setArticleRef = (id, element) => {
-    if (element) {
-      articleRefs.current.set(id, element);
-    } else {
-      articleRefs.current.delete(id);
-    }
-  };
 
   if (!articles || articles.length === 0) {
     return (
