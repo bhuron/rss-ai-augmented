@@ -6,7 +6,9 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
   const articleRefs = useRef(new Map());
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [hasInteracted, setHasInteracted] = useState(false);
-  
+  const prevArticlesLengthRef = useRef(0);
+  const prevCategoriesRef = useRef(null);
+
   // Helper to detect YouTube videos
   const isYouTubeVideo = (link) => {
     return link?.includes('youtube.com/watch') || link?.includes('youtu.be/');
@@ -52,9 +54,17 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
   }, [navigationList]);
 
   useEffect(() => {
-    // Reset selection to first unread article when articles or categories change
-    const firstUnreadIndex = navigationList.findIndex(a => !a.is_read);
-    setSelectedIndex(firstUnreadIndex >= 0 ? firstUnreadIndex : 0);
+    // Reset selection to first unread article only when article count actually changes
+    // (e.g., new articles loaded) or when categories change (AI sort applied)
+    const currentLength = articles.length;
+    const categoriesChanged = prevCategoriesRef.current !== categories;
+
+    if (currentLength !== prevArticlesLengthRef.current || categoriesChanged) {
+      const firstUnreadIndex = navigationList.findIndex(a => !a.is_read);
+      setSelectedIndex(firstUnreadIndex >= 0 ? firstUnreadIndex : 0);
+      prevArticlesLengthRef.current = currentLength;
+      prevCategoriesRef.current = categories;
+    }
   }, [articles.length, categories]);
 
   useEffect(() => {
@@ -94,7 +104,7 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
           // For categorized view, find the selected element by class
           setTimeout(() => {
             const selectedElement = document.querySelector('.article-card.selected');
-            selectedElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            selectedElement?.scrollIntoView({ behavior: 'auto', block: 'center' });
           }, 0);
         }
       } else if (e.key === 'k' || e.key === 'ArrowUp') {
@@ -105,7 +115,7 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
           // For categorized view, find the selected element by class
           setTimeout(() => {
             const selectedElement = document.querySelector('.article-card.selected');
-            selectedElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            selectedElement?.scrollIntoView({ behavior: 'auto', block: 'center' });
           }, 0);
         }
       } else if (e.key === 'Enter' || e.key === 'o') {
