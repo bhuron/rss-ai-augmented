@@ -90,41 +90,54 @@ function App() {
 
 
   useEffect(() => {
-    fetchArticles();
+    const abortController = new AbortController();
+
+    const fetchArticles = async () => {
+      try {
+        const params = new URLSearchParams();
+        if (selectedFeed) params.append('feedId', selectedFeed);
+        // Don't apply unread filter when showing saved articles
+        if (showUnreadOnly && !showSavedOnly) params.append('unreadOnly', 'true');
+
+        // Fetch both filtered and all articles in parallel
+        const [res, allRes] = await Promise.all([
+          fetch(`/api/articles?${params}`, { signal: abortController.signal }),
+          fetch('/api/articles', { signal: abortController.signal })
+        ]);
+
+        let data = await res.json();
+        const allData = await allRes.json();
+
+        // Filter for saved articles on client side (always show all saved, read or unread)
+        if (showSavedOnly) {
+          data = data.filter(a => a.is_saved);
+        }
+
+        // Double-check client-side filtering to ensure no wrong articles slip through
+        if (selectedFeed) {
+          data = data.filter(a => a.feed_id === selectedFeed);
+        }
+
+        setArticles(data);
+        setAllArticles(allData);
+      } catch (error) {
+        // Ignore abort errors (component unmounted or filters changed)
+        if (error.name !== 'AbortError') {
+          console.error('Failed to fetch articles:', error);
+        }
+      }
+    };
+
     setCategories(null); // Clear categories when filter changes
+    fetchArticles();
+
+    return () => abortController.abort();
   }, [selectedFeed, showUnreadOnly, showSavedOnly]);
 
   const fetchFeeds = async () => {
     const res = await fetch('/api/feeds');
     const data = await res.json();
     setFeeds(data);
-  };
-
-  const fetchArticles = async () => {
-    const params = new URLSearchParams();
-    if (selectedFeed) params.append('feedId', selectedFeed);
-    // Don't apply unread filter when showing saved articles
-    if (showUnreadOnly && !showSavedOnly) params.append('unreadOnly', 'true');
-    
-    const res = await fetch(`/api/articles?${params}`);
-    let data = await res.json();
-    
-    // Filter for saved articles on client side (always show all saved, read or unread)
-    if (showSavedOnly) {
-      data = data.filter(a => a.is_saved);
-    }
-    
-    // Double-check client-side filtering to ensure no wrong articles slip through
-    if (selectedFeed) {
-      data = data.filter(a => a.feed_id === selectedFeed);
-    }
-    
-    setArticles(data);
-    
-    // Also fetch all articles for unread counts
-    const allRes = await fetch('/api/articles');
-    const allData = await allRes.json();
-    setAllArticles(allData);
   };
 
   const addFeed = useCallback(async (url) => {
