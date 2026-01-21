@@ -71,9 +71,7 @@ function App() {
           });
       } else if (e.key === 'r') {
         e.preventDefault();
-        await syncAllFeeds();
-        // Refresh the current view after sync completes
-        fetchArticles();
+        await syncAllFeeds(true);
       } else if (e.key === 'a') {
         e.preventDefault();
         handleSelectFeed(null);
@@ -89,50 +87,43 @@ function App() {
 
 
 
-  useEffect(() => {
-    const abortController = new AbortController();
+  const fetchArticles = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+      if (selectedFeed) params.append('feedId', selectedFeed);
+      // Don't apply unread filter when showing saved articles
+      if (showUnreadOnly && !showSavedOnly) params.append('unreadOnly', 'true');
 
-    const fetchArticles = async () => {
-      try {
-        const params = new URLSearchParams();
-        if (selectedFeed) params.append('feedId', selectedFeed);
-        // Don't apply unread filter when showing saved articles
-        if (showUnreadOnly && !showSavedOnly) params.append('unreadOnly', 'true');
+      // Fetch both filtered and all articles in parallel
+      const [res, allRes] = await Promise.all([
+        fetch(`/api/articles?${params}`),
+        fetch('/api/articles')
+      ]);
 
-        // Fetch both filtered and all articles in parallel
-        const [res, allRes] = await Promise.all([
-          fetch(`/api/articles?${params}`, { signal: abortController.signal }),
-          fetch('/api/articles', { signal: abortController.signal })
-        ]);
+      let data = await res.json();
+      const allData = await allRes.json();
 
-        let data = await res.json();
-        const allData = await allRes.json();
-
-        // Filter for saved articles on client side (always show all saved, read or unread)
-        if (showSavedOnly) {
-          data = data.filter(a => a.is_saved);
-        }
-
-        // Double-check client-side filtering to ensure no wrong articles slip through
-        if (selectedFeed) {
-          data = data.filter(a => a.feed_id === selectedFeed);
-        }
-
-        setArticles(data);
-        setAllArticles(allData);
-      } catch (error) {
-        // Ignore abort errors (component unmounted or filters changed)
-        if (error.name !== 'AbortError') {
-          console.error('Failed to fetch articles:', error);
-        }
+      // Filter for saved articles on client side (always show all saved, read or unread)
+      if (showSavedOnly) {
+        data = data.filter(a => a.is_saved);
       }
-    };
 
+      // Double-check client-side filtering to ensure no wrong articles slip through
+      if (selectedFeed) {
+        data = data.filter(a => a.feed_id === selectedFeed);
+      }
+
+      setArticles(data);
+      setAllArticles(allData);
+    } catch (error) {
+      console.error('Failed to fetch articles:', error);
+    }
+  }, [selectedFeed, showUnreadOnly, showSavedOnly]);
+
+  useEffect(() => {
     setCategories(null); // Clear categories when filter changes
     fetchArticles();
-
-    return () => abortController.abort();
-  }, [selectedFeed, showUnreadOnly, showSavedOnly]);
+  }, [fetchArticles]);
 
   const fetchFeeds = async () => {
     const res = await fetch('/api/feeds');
@@ -172,24 +163,24 @@ function App() {
     });
   }, []);
 
-  const syncAllFeeds = useCallback(async () => {
+  const syncAllFeeds = useCallback(async (userInitiated = false) => {
     setSyncing(true);
     try {
       const response = await fetch('/api/feeds/sync-all', { method: 'POST' });
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        
+
         const text = decoder.decode(value);
         const lines = text.split('\n').filter(l => l.trim());
-        
+
         for (const line of lines) {
           try {
             const data = JSON.parse(line);
-            
+
             if (data.type === 'progress') {
               // Update articles progressively as feeds complete
               const allRes = await fetch('/api/articles');
@@ -201,18 +192,23 @@ function App() {
           }
         }
       }
-      
-      // Final update
+
+      // Final update - refresh all articles for sidebar counts
       const allRes = await fetch('/api/articles');
       const allData = await allRes.json();
       setAllArticles(allData);
-      
+
+      // If user-initiated (pressed 'r'), also refresh the visible article list
+      if (userInitiated) {
+        fetchArticles();
+      }
+
     } catch (error) {
       console.error('Failed to sync feeds:', error);
     } finally {
       setSyncing(false);
     }
-  }, []);
+  }, [fetchArticles]);
 
   const exportFeeds = useCallback(async () => {
     window.open('/api/feeds/export', '_blank');
