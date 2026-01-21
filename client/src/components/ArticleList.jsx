@@ -5,6 +5,7 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
   const observerRef = useRef(null);
   const articleRefs = useRef(new Map());
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [hasInteracted, setHasInteracted] = useState(false);
   
   // Helper to detect YouTube videos
   const isYouTubeVideo = (link) => {
@@ -50,9 +51,27 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
   });
 
   useEffect(() => {
-    // Reset selection when articles or categories change
-    setSelectedIndex(0);
+    // Reset selection to first unread article when articles or categories change
+    const firstUnreadIndex = navigationList.findIndex(a => !a.is_read);
+    setSelectedIndex(firstUnreadIndex >= 0 ? firstUnreadIndex : 0);
   }, [articles.length, categories]);
+
+  useEffect(() => {
+    // Detect user interaction (scroll or click) to enable auto-mark-as-read
+    const handleInteraction = () => {
+      if (!hasInteracted) {
+        setHasInteracted(true);
+      }
+    };
+
+    window.addEventListener('scroll', handleInteraction, { once: true, passive: true });
+    window.addEventListener('click', handleInteraction, { once: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleInteraction);
+      window.removeEventListener('click', handleInteraction);
+    };
+  }, [hasInteracted]);
 
   useEffect(() => {
     // Keyboard shortcuts for article navigation
@@ -121,33 +140,41 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
   }, [articles, categories, selectedIndex, onMarkAsRead]);
 
   useEffect(() => {
+    // Reset interaction state when articles or categories change
+    setHasInteracted(false);
+  }, [articles.length, categories]);
+
+  useEffect(() => {
     const markedIds = new Set();
     const timeouts = new Map();
-    
+
     // Create intersection observer to detect when articles are scrolled past
     observerRef.current = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
+          // Only auto-mark after user has interacted with the page
+          if (!hasInteracted) return;
+
           // If article has scrolled past the top of viewport and is unread
           if (entry.boundingClientRect.top < 0 && !entry.isIntersecting) {
             const articleId = parseInt(entry.target.dataset.articleId);
             const isRead = entry.target.dataset.isRead === 'true';
-            
+
             // Only mark if not already marked and not already read
             if (!markedIds.has(articleId) && !isRead) {
               markedIds.add(articleId);
-              
+
               // Clear any existing timeout for this article
               if (timeouts.has(articleId)) {
                 clearTimeout(timeouts.get(articleId));
               }
-              
+
               // Mark as read after a short delay
               const timeout = setTimeout(() => {
                 onMarkAsRead(articleId, true);
                 timeouts.delete(articleId);
               }, 500);
-              
+
               timeouts.set(articleId, timeout);
             }
           }
@@ -173,7 +200,7 @@ function ArticleList({ articles, onMarkAsRead, onToggleSaved, categories }) {
       // Clear all pending timeouts
       timeouts.forEach(timeout => clearTimeout(timeout));
     };
-  }, [articles, onMarkAsRead]);
+  }, [articles, onMarkAsRead, hasInteracted]);
 
   const setArticleRef = (id, element) => {
     if (element) {
