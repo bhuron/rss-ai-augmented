@@ -13,6 +13,11 @@ let db = {
   nextArticleId: 1
 };
 
+// Export db for testing (accessed via global.__DB__ in tests)
+if (typeof global !== 'undefined') {
+  global.__DB__ = db;
+}
+
 function loadDatabase() {
   if (fs.existsSync(DB_FILE)) {
     const data = fs.readFileSync(DB_FILE, 'utf8');
