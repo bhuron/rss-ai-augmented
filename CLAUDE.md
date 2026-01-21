@@ -13,6 +13,19 @@ cd server && npm install && npm run dev
 cd client && npm install && npm run dev
 ```
 
+### Testing
+```bash
+# Client tests
+cd client && npm test                 # Run all tests
+cd client && npm run test:watch       # Watch mode
+cd client && npm run test:coverage    # With coverage report
+
+# Server tests
+cd server && npm test                # Run all tests
+cd server && npm run test:watch      # Watch mode
+cd server && npm run test:coverage   # With coverage report
+```
+
 ### Production Build
 ```bash
 # Frontend with bundle analysis
@@ -176,6 +189,22 @@ const UNREAD_RETENTION_DAYS = 60;
 1. Create route file in `server/src/routes/`
 2. Import and mount in `server/src/index.js`
 3. Client accesses via `/api/your-endpoint` (proxied by Vite)
+
+### Running a Single Test
+Both client and server use Vitest. To run a specific test file:
+```bash
+# Client
+cd client && npx vitest path/to/test.test.jsx
+
+# Server
+cd server && npx vitest path/to/test.test.js
+```
+
+To run tests matching a pattern:
+```bash
+# Run all tests matching "Article"
+cd client && npx vitest --testNamePattern="Article"
+```
 
 ### Debugging Feed Sync Issues
 - Check server console for feed-specific errors
