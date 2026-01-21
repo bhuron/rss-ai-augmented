@@ -349,6 +349,8 @@ body {
   gap: 16px;
   position: relative;
   transition: background 0.15s ease;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 200px;
 }
 
 .article-card:hover {

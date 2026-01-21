@@ -425,18 +425,18 @@ function App() {
           onMarkAllAsRead={markAllAsRead}
           hasUnread={articles.some(a => !a.is_read)}
         />
-        {loading && (
+        {loading ? (
           <div className="ai-loading-banner">
             AI is analyzing articles... Results will appear when ready.
           </div>
-        )}
-        {syncing && (
+        ) : null}
+        {syncing ? (
           <div className="sync-indicator">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M8 2V5M8 11V14M14 8H11M5 8H2M12.5 12.5L10.5 10.5M10.5 5.5L12.5 3.5M3.5 12.5L5.5 10.5M5.5 5.5L3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
           </div>
-        )}
+        ) : null}
         <ArticleList articles={articles} onMarkAsRead={markAsRead} onToggleSaved={toggleSaved} categories={categories} />
       </div>
       <Suspense fallback={null}>
