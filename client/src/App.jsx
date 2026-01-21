@@ -1,5 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense, useCallback } from 'react';
 import { useFeedOperations } from './hooks/useFeedOperations.js';
+import { useArticleOperations } from './hooks/useArticleOperations.js';
 import FeedList from './components/FeedList';
 import ArticleList from './components/ArticleList';
 import Toolbar from './components/Toolbar';
@@ -19,6 +20,13 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [categories, setCategories] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Article operations hook
+  const { markAsRead, toggleSaved, markAllAsRead } = useArticleOperations({
+    setArticles,
+    setAllArticles,
+    articles
+  });
 
   const handleSelectFeed = useCallback((feedId) => {
     setSelectedFeed(feedId);
@@ -174,61 +182,6 @@ function App() {
       setSyncing(false);
     }
   }, [fetchArticles]);
-
-  const markAsRead = useCallback(async (id, isRead) => {
-    // Update server
-    await fetch(`/api/articles/${id}/read`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isRead })
-    });
-    
-    // Update locally - keep article in current view even if it no longer matches filter
-    // This prevents jarring disappearances while navigating
-    setArticles(prev => prev.map(a => 
-      a.id === id ? { ...a, is_read: isRead } : a
-    ));
-    setAllArticles(prev => prev.map(a =>
-      a.id === id ? { ...a, is_read: isRead } : a
-    ));
-  }, []);
-
-  const toggleSaved = useCallback(async (id, isSaved) => {
-    // Update server
-    await fetch(`/api/articles/${id}/saved`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isSaved })
-    });
-    
-    // Update locally - keep article in current view
-    setArticles(prev => prev.map(a => 
-      a.id === id ? { ...a, is_saved: isSaved } : a
-    ));
-    setAllArticles(prev => prev.map(a =>
-      a.id === id ? { ...a, is_saved: isSaved } : a
-    ));
-  }, []);
-
-  const markAllAsRead = useCallback(async () => {
-    const unreadIds = articles.filter(a => !a.is_read).map(a => a.id);
-    if (unreadIds.length === 0) return;
-    
-    // Update locally first
-    setArticles(prev => prev.map(a => ({ ...a, is_read: true })));
-    setAllArticles(prev => prev.map(a => 
-      unreadIds.includes(a.id) ? { ...a, is_read: true } : a
-    ));
-    
-    // Update server
-    await Promise.all(unreadIds.map(id => 
-      fetch(`/api/articles/${id}/read`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isRead: true })
-      })
-    ));
-  }, [articles]);
 
   // Calculate unread counts per feed
   const unreadCounts = React.useMemo(() => {
