@@ -47,34 +47,36 @@ export async function convertYouTubeUrl(url) {
     const html = await response.text();
 
     // Try to find channel ID in various places in the HTML
-    // Method 1: Look for channelId in JSON data
-    const channelIdJsonMatch = html.match(/"channelId":"([^"]+)"/);
-    if (channelIdJsonMatch) {
-      return `https://www.youtube.com/feeds/videos.xml?channel_id=${channelIdJsonMatch[1]}`;
-    }
+    // Priority order: meta tags first (most reliable), then JSON (fallback)
 
-    // Method 2: Look for externalId in JSON data (alternative format)
-    const externalIdMatch = html.match(/"externalId":"([^"]+)"/);
-    if (externalIdMatch) {
-      return `https://www.youtube.com/feeds/videos.xml?channel_id=${externalIdMatch[1]}`;
-    }
-
-    // Method 3: Look for <meta> tag with channel ID
+    // Method 1: Look for <meta> tag with channel ID (most reliable - primary channel)
     const metaMatch = html.match(/<meta\s+itemprop="channelId"\s+content="([^"]+)"/);
     if (metaMatch) {
       return `https://www.youtube.com/feeds/videos.xml?channel_id=${metaMatch[1]}`;
     }
 
-    // Method 4: Look for og:url which contains channel ID
+    // Method 2: Look for og:url which contains channel ID
     const ogUrlMatch = html.match(/<meta\s+property="og:url"\s+content="https:\/\/www\.youtube\.com\/channel\/([^"]+)"/);
     if (ogUrlMatch) {
       return `https://www.youtube.com/feeds/videos.xml?channel_id=${ogUrlMatch[1]}`;
     }
 
-    // Method 5: Look for canonical link
+    // Method 3: Look for canonical link
     const canonicalMatch = html.match(/<link\s+rel="canonical"\s+href="https:\/\/www\.youtube\.com\/channel\/([^"]+)"/);
     if (canonicalMatch) {
       return `https://www.youtube.com/feeds/videos.xml?channel_id=${canonicalMatch[1]}`;
+    }
+
+    // Method 4: Look for externalId in JSON data (fallback)
+    const externalIdMatch = html.match(/"externalId":"([^"]+)"/);
+    if (externalIdMatch) {
+      return `https://www.youtube.com/feeds/videos.xml?channel_id=${externalIdMatch[1]}`;
+    }
+
+    // Method 5: Look for channelId in JSON data (last resort - may match unrelated channels)
+    const channelIdJsonMatch = html.match(/"channelId":"([^"]+)"/);
+    if (channelIdJsonMatch) {
+      return `https://www.youtube.com/feeds/videos.xml?channel_id=${channelIdJsonMatch[1]}`;
     }
 
     throw new Error('Could not extract channel ID from page');
