@@ -7,6 +7,7 @@ import feedRoutes from './routes/feeds.js';
 import articleRoutes from './routes/articles.js';
 import aiRoutes from './routes/ai.js';
 import settingsRoutes from './routes/settings.js';
+import { basicAuth } from './middleware/basicAuth.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 dotenv.config();
@@ -31,6 +32,9 @@ app.use((req, res, next) => {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   next();
 });
+
+// Basic auth (skipped if env vars are empty)
+app.use(basicAuth);
 
 // Initialize database
 initDatabase();
