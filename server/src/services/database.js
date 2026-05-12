@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { normalizeUrl } from '../utils/url.js';
 
-const DB_FILE = 'database.json';
+const DB_FILE = path.join('data', 'database.json');
 
 let db = {
   feeds: [],
@@ -52,6 +52,14 @@ function saveDatabase() {
 }
 
 export function initDatabase() {
+  fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
+
+  // Migrate from old flat path to new data/ subdirectory
+  const oldPath = 'database.json';
+  if (!fs.existsSync(DB_FILE) && fs.existsSync(oldPath)) {
+    fs.renameSync(oldPath, DB_FILE);
+  }
+
   loadDatabase();
 }
 

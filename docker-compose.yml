@@ -1,0 +1,29 @@
+services:
+  server:
+    build:
+      context: .
+      target: server
+    restart: unless-stopped
+    env_file:
+      - server/.env
+    volumes:
+      - rss-db:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/feeds',(r)=>{process.exit(r.statusCode===200?0:1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx:
+    build:
+      context: .
+      target: nginx
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+
+volumes:
+  rss-db:

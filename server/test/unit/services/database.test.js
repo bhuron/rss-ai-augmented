@@ -9,6 +9,8 @@ vi.mock('fs', () => ({
     writeFile: vi.fn((file, data, encoding, callback) => {
       callback(null);
     }),
+    mkdirSync: vi.fn(),
+    renameSync: vi.fn(),
   },
 }));
 
