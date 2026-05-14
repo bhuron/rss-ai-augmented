@@ -21,7 +21,7 @@ EXPOSE 3000
 CMD ["node", "src/index.js"]
 
 # Stage 3: Nginx serving client + reverse-proxying API
-FROM nginx:alpine
+FROM nginx:alpine AS nginx
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY --from=client-builder /app/client/dist /usr/share/nginx/html
 EXPOSE 80

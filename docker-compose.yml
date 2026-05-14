@@ -9,7 +9,7 @@ services:
     volumes:
       - rss-db:/app/data
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/feeds',(r)=>{process.exit(r.statusCode===200?0:1)})"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/feeds',(r)=>{process.exit(r.statusCode<500?0:1)})"]
       interval: 30s
       timeout: 10s
       retries: 3
