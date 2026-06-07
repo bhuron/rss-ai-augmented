@@ -64,21 +64,23 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     fetchFeeds();
     // Sync on app load and refresh articles after
     syncAllFeeds().then(() => {
       fetchArticles();
     });
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     // Auto-refresh every 15 minutes
     const interval = setInterval(() => {
       syncAllFeeds();
     }, 15 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [selectedFeed, showUnreadOnly, showSavedOnly]); // Recreate interval when filters change
+  }, [isAuthenticated, selectedFeed, showUnreadOnly, showSavedOnly]); // Recreate interval when auth or filters change
 
   // Listen for auth expiry (401 responses clear credentials)
   useEffect(() => {

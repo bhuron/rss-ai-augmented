@@ -10,7 +10,8 @@ export function basicAuth(req, res, next) {
   const header = req.headers.authorization;
 
   if (!header || !header.startsWith('Basic ')) {
-    res.setHeader('WWW-Authenticate', 'Basic realm="RSS Reader"');
+    // Note: intentionally not sending WWW-Authenticate to avoid the browser's
+    // native Basic Auth dialog — the SPA handles login with a custom form.
     return res.status(401).json({ error: 'Authentication required' });
   }
 
@@ -22,7 +23,6 @@ export function basicAuth(req, res, next) {
     .split(':');
 
   if (providedUser !== user || providedPassword !== password) {
-    res.setHeader('WWW-Authenticate', 'Basic realm="RSS Reader"');
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 

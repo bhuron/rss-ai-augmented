@@ -32,7 +32,9 @@ describe('Basic Auth Middleware', () => {
 
     const response = await request(app).get('/test');
     expect(response.status).toBe(401);
-    expect(response.headers['www-authenticate']).toBeDefined();
+    // WWW-Authenticate is deliberately absent — the SPA handles login
+    // with a custom form, not the browser's native dialog.
+    expect(response.headers['www-authenticate']).toBeUndefined();
   });
 
   it('should return 401 for wrong username', async () => {
