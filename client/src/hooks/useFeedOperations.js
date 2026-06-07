@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { APIError } from '../utils/api.js';
+import { authHeaders } from '../utils/auth.js';
 
 /**
  * Custom hook for feed CRUD operations
@@ -25,7 +26,7 @@ export function useFeedOperations() {
   const fetchFeeds = useCallback(async (shouldThrow = false) => {
     try {
       setError(null);
-      const res = await fetch('/api/feeds');
+      const res = await fetch('/api/feeds', { headers: authHeaders() });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new APIError(err.error || 'Failed to fetch feeds', res.status);
@@ -48,7 +49,7 @@ export function useFeedOperations() {
       setError(null);
       const res = await fetch('/api/feeds', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ url })
       });
       if (!res.ok) {
@@ -67,7 +68,7 @@ export function useFeedOperations() {
   const deleteFeed = useCallback(async (id, selectedFeed, setSelectedFeed, fetchArticles) => {
     try {
       setError(null);
-      const res = await fetch(`/api/feeds/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/feeds/${id}`, { method: 'DELETE', headers: authHeaders() });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new APIError(err.error || 'Failed to delete feed', res.status);
@@ -91,7 +92,7 @@ export function useFeedOperations() {
   const syncFeed = useCallback(async (id, fetchArticles) => {
     try {
       setError(null);
-      const res = await fetch(`/api/feeds/${id}/sync`, { method: 'POST' });
+      const res = await fetch(`/api/feeds/${id}/sync`, { method: 'POST', headers: authHeaders() });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new APIError(err.error || 'Failed to sync feed', res.status);
@@ -118,7 +119,7 @@ export function useFeedOperations() {
       // Then sync with server
       const res = await fetch(`/api/feeds/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: newTitle })
       });
       if (!res.ok) {
@@ -144,7 +145,7 @@ export function useFeedOperations() {
       setError(null);
       const res = await fetch('/api/feeds/import', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ opml: opmlContent })
       });
       if (!res.ok) {

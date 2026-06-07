@@ -40,7 +40,7 @@ describe('useFeedOperations', () => {
     });
 
     expect(result.current.feeds).toEqual(mockFeeds);
-    expect(global.fetch).toHaveBeenCalledWith('/api/feeds');
+    expect(global.fetch).toHaveBeenCalledWith('/api/feeds', { headers: {} });
   });
 
   it('should add feed', async () => {
@@ -92,7 +92,7 @@ describe('useFeedOperations', () => {
       await result.current.deleteFeed(1, 1, setSelectedFeed);
     });
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/feeds/1', { method: 'DELETE' });
+    expect(global.fetch).toHaveBeenCalledWith('/api/feeds/1', { method: 'DELETE', headers: {} });
     expect(setSelectedFeed).toHaveBeenCalledWith(null);
   });
 
@@ -116,7 +116,7 @@ describe('useFeedOperations', () => {
       await result.current.deleteFeed(1, 2, setSelectedFeed);
     });
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/feeds/1', { method: 'DELETE' });
+    expect(global.fetch).toHaveBeenCalledWith('/api/feeds/1', { method: 'DELETE', headers: {} });
     expect(setSelectedFeed).not.toHaveBeenCalled();
   });
 
@@ -138,7 +138,7 @@ describe('useFeedOperations', () => {
       await result.current.deleteFeed(1, 1, undefined);
     });
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/feeds/1', { method: 'DELETE' });
+    expect(global.fetch).toHaveBeenCalledWith('/api/feeds/1', { method: 'DELETE', headers: {} });
   });
 
   it('should sync feed', async () => {
@@ -153,7 +153,7 @@ describe('useFeedOperations', () => {
       await result.current.syncFeed(1);
     });
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/feeds/1/sync', { method: 'POST' });
+    expect(global.fetch).toHaveBeenCalledWith('/api/feeds/1/sync', { method: 'POST', headers: {} });
   });
 
   it('should rename feed with optimistic update', async () => {

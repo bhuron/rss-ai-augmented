@@ -43,8 +43,8 @@ describe('Article fetching (Integration)', () => {
 
     // Both fetch calls should be made immediately (in parallel)
     expect(fetchSpy).toHaveBeenCalledTimes(2);
-    expect(fetchSpy).toHaveBeenCalledWith('/api/articles?unreadOnly=true');
-    expect(fetchSpy).toHaveBeenCalledWith('/api/articles');
+    expect(fetchSpy).toHaveBeenCalledWith('/api/articles?unreadOnly=true', { headers: {} });
+    expect(fetchSpy).toHaveBeenCalledWith('/api/articles', { headers: {} });
 
     await act(async () => {
       await new Promise(resolve => setTimeout(resolve, 0));

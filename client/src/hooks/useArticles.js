@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { APIError } from '../utils/api.js';
+import { authHeaders } from '../utils/auth.js';
 
 /**
  * Custom hook for article fetching with parallel queries
@@ -33,14 +34,14 @@ export function useArticles({ selectedFeed, showUnreadOnly, showSavedOnly }) {
 
       // Fetch both filtered and all articles in parallel using the validated API client
       const [data, allData] = await Promise.all([
-        fetch(`/api/articles?${params}`).then(async (res) => {
+        fetch(`/api/articles?${params}`, { headers: authHeaders() }).then(async (res) => {
           if (!res.ok) {
             const err = await res.json().catch(() => ({}));
             throw new APIError(err.error || 'Failed to fetch articles', res.status);
           }
           return res.json();
         }),
-        fetch('/api/articles').then(async (res) => {
+        fetch('/api/articles', { headers: authHeaders() }).then(async (res) => {
           if (!res.ok) {
             const err = await res.json().catch(() => ({}));
             throw new APIError(err.error || 'Failed to fetch articles', res.status);

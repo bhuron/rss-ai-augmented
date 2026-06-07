@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { APIError } from '../utils/api.js';
+import { authHeaders } from '../utils/auth.js';
 
 /**
  * Custom hook for feed synchronization with SSE streaming
@@ -24,7 +25,7 @@ export function useFeedSync({ fetchArticles, setAllArticles }) {
     setSyncing(true);
     setError(null);
     try {
-      const response = await fetch('/api/feeds/sync-all', { method: 'POST' });
+      const response = await fetch('/api/feeds/sync-all', { method: 'POST', headers: authHeaders() });
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
         throw new APIError(err.error || 'Failed to sync feeds', response.status);
@@ -46,7 +47,7 @@ export function useFeedSync({ fetchArticles, setAllArticles }) {
 
             if (data.type === 'progress') {
               // Update articles progressively as feeds complete
-              const allRes = await fetch('/api/articles');
+              const allRes = await fetch('/api/articles', { headers: authHeaders() });
               if (!allRes.ok) {
                 const err = await allRes.json().catch(() => ({}));
                 throw new APIError(err.error || 'Failed to fetch articles', allRes.status);

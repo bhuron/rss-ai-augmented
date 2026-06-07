@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { APIError } from '../utils/api.js';
+import { authHeaders } from '../utils/auth.js';
 
 /**
  * Custom hook for AI-powered article sorting with smart batching
@@ -65,7 +66,7 @@ export function useAISorting({ articles, setArticles, setCategories }) {
     try {
       const res = await fetch('/api/ai/sort', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           articleIds: articlesToSort.map(a => a.id),
           criteria: 'relevance and importance'

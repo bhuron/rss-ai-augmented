@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { authHeaders } from '../utils/auth.js';
 
 const PROVIDERS = [
   { id: 'openai', name: 'OpenAI', defaultModel: 'gpt-4o-mini', needsBaseUrl: false },
@@ -24,7 +25,7 @@ function SettingsModal({ isOpen, onClose, onExport, onImport }) {
   }, [isOpen]);
 
   const fetchConfig = async () => {
-    const res = await fetch('/api/settings/llm');
+    const res = await fetch('/api/settings/llm', { headers: authHeaders() });
     const data = await res.json();
     if (data.provider) {
       setConfig(data);
@@ -45,7 +46,7 @@ function SettingsModal({ isOpen, onClose, onExport, onImport }) {
     setSaving(true);
     await fetch('/api/settings/llm', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify(config)
     });
     setSaving(false);

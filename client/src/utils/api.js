@@ -17,15 +17,7 @@ import {
   UpdateLLMSettingsRequestSchema,
   ImportOPMLRequestSchema
 } from '../schemas/api.js';
-import { getAuthHeader, clearAuth } from './auth.js';
-
-/**
- * Returns headers with Authorization if credentials are stored.
- */
-function authHeaders() {
-  const header = getAuthHeader();
-  return header ? { Authorization: header } : {};
-}
+import { authHeaders, clearAuth } from './auth.js';
 
 /**
  * Custom error class for API errors

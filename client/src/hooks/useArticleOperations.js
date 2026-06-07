@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { APIError } from '../utils/api.js';
+import { authHeaders } from '../utils/auth.js';
 
 /**
  * Custom hook for article state operations
@@ -25,7 +26,7 @@ export function useArticleOperations({ setArticles, setAllArticles, articles }) 
       // Update server
       const res = await fetch(`/api/articles/${id}/read`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ isRead })
       });
       if (!res.ok) {
@@ -52,7 +53,7 @@ export function useArticleOperations({ setArticles, setAllArticles, articles }) 
       // Update server
       const res = await fetch(`/api/articles/${id}/saved`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ isSaved })
       });
       if (!res.ok) {
@@ -88,7 +89,7 @@ export function useArticleOperations({ setArticles, setAllArticles, articles }) 
       await Promise.all(unreadIds.map(async (id) => {
         const res = await fetch(`/api/articles/${id}/read`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
           body: JSON.stringify({ isRead: true })
         });
         if (!res.ok) {

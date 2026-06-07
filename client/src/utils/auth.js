@@ -31,3 +31,12 @@ export function saveAuth(username, password) {
 export function clearAuth() {
   localStorage.removeItem(AUTH_KEY);
 }
+
+/**
+ * Returns a headers object with Authorization if credentials are stored.
+ * Use with spread: { ...authHeaders(), 'Content-Type': 'application/json' }
+ */
+export function authHeaders() {
+  const header = getAuthHeader();
+  return header ? { Authorization: header } : {};
+}
