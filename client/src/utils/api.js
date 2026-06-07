@@ -17,6 +17,15 @@ import {
   UpdateLLMSettingsRequestSchema,
   ImportOPMLRequestSchema
 } from '../schemas/api.js';
+import { getAuthHeader, clearAuth } from './auth.js';
+
+/**
+ * Returns headers with Authorization if credentials are stored.
+ */
+function authHeaders() {
+  const header = getAuthHeader();
+  return header ? { Authorization: header } : {};
+}
 
 /**
  * Custom error class for API errors
@@ -52,6 +61,11 @@ function validateResponse(data, schema, endpoint) {
  */
 async function handleAPIResponse(response, schema, endpoint) {
   if (!response.ok) {
+    // On 401, clear stored credentials so the user is prompted to re-login
+    if (response.status === 401) {
+      clearAuth();
+      window.dispatchEvent(new CustomEvent('auth:expired'));
+    }
     let errorMessage = 'Request failed';
     try {
       const data = await response.json();
@@ -79,7 +93,7 @@ export const api = {
    * Get all feeds
    */
   async getFeeds() {
-    const response = await fetch('/api/feeds');
+    const response = await fetch('/api/feeds', { headers: authHeaders() });
     return handleAPIResponse(response, GetFeedsResponseSchema, 'GET /api/feeds');
   },
 
@@ -92,7 +106,7 @@ export const api = {
 
     const response = await fetch('/api/feeds', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify(validatedData)
     });
 
@@ -105,7 +119,8 @@ export const api = {
    */
   async deleteFeed(id) {
     const response = await fetch(`/api/feeds/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: authHeaders()
     });
     return handleAPIResponse(response, SuccessResponseSchema, `DELETE /api/feeds/${id}`);
   },
@@ -119,7 +134,7 @@ export const api = {
 
     const response = await fetch(`/api/feeds/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify(validatedData)
     });
 
@@ -131,7 +146,8 @@ export const api = {
    */
   async syncFeed(id) {
     const response = await fetch(`/api/feeds/${id}/sync`, {
-      method: 'POST'
+      method: 'POST',
+      headers: authHeaders()
     });
     return handleAPIResponse(response, SyncResultSchema, `POST /api/feeds/${id}/sync`);
   },
@@ -142,7 +158,8 @@ export const api = {
    */
   async syncAllFeeds() {
     const response = await fetch('/api/feeds/sync-all', {
-      method: 'POST'
+      method: 'POST',
+      headers: authHeaders()
     });
 
     if (!response.ok) {
@@ -187,7 +204,7 @@ export const api = {
    * Export feeds as OPML
    */
   async exportFeeds() {
-    const response = await fetch('/api/feeds/export');
+    const response = await fetch('/api/feeds/export', { headers: authHeaders() });
     if (!response.ok) {
       throw new APIError('Failed to export feeds', response.status);
     }
@@ -203,7 +220,7 @@ export const api = {
 
     const response = await fetch('/api/feeds/import', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify(validatedData)
     });
 
@@ -222,7 +239,7 @@ export const api = {
     if (feedId) params.append('feedId', feedId.toString());
     if (unreadOnly) params.append('unreadOnly', 'true');
 
-    const response = await fetch(`/api/articles?${params}`);
+    const response = await fetch(`/api/articles?${params}`, { headers: authHeaders() });
     return handleAPIResponse(response, GetArticlesResponseSchema, 'GET /api/articles');
   },
 
@@ -235,7 +252,7 @@ export const api = {
 
     const response = await fetch(`/api/articles/${id}/read`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify(validatedData)
     });
 
@@ -251,7 +268,7 @@ export const api = {
 
     const response = await fetch(`/api/articles/${id}/saved`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify(validatedData)
     });
 
@@ -271,7 +288,7 @@ export const api = {
 
     const response = await fetch('/api/ai/sort', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify(validatedData)
     });
 
@@ -287,7 +304,7 @@ export const api = {
 
     const response = await fetch('/api/ai/digest', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify(validatedData)
     });
 
@@ -302,7 +319,7 @@ export const api = {
    * Get LLM settings
    */
   async getLLMSettings() {
-    const response = await fetch('/api/settings/llm');
+    const response = await fetch('/api/settings/llm', { headers: authHeaders() });
     return handleAPIResponse(response, GetLLMSettingsResponseSchema, 'GET /api/settings/llm');
   },
 
@@ -315,7 +332,7 @@ export const api = {
 
     const response = await fetch('/api/settings/llm', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify(validatedData)
     });
 

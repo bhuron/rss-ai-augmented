@@ -6,6 +6,8 @@ import { useFeedSync } from './hooks/useFeedSync.js';
 import { useAISorting } from './hooks/useAISorting.js';
 import { useGlobalKeyboardShortcuts } from './hooks/useGlobalKeyboardShortcuts.js';
 import { useUnreadCounts } from './hooks/useUnreadCounts.js';
+import { hasAuth } from './utils/auth.js';
+import Login from './components/Login';
 import FeedList from './components/FeedList';
 import ArticleList from './components/ArticleList';
 import Toolbar from './components/Toolbar';
@@ -21,6 +23,8 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [categories, setCategories] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isAuthenticated, setAuthenticated] = useState(hasAuth);
+  const [authError, setAuthError] = useState(null);
 
   // Articles hook
   const { articles, allArticles, setArticles, setAllArticles, fetchArticles } = useArticles({
@@ -72,9 +76,19 @@ function App() {
     const interval = setInterval(() => {
       syncAllFeeds();
     }, 15 * 60 * 1000);
-    
+
     return () => clearInterval(interval);
   }, [selectedFeed, showUnreadOnly, showSavedOnly]); // Recreate interval when filters change
+
+  // Listen for auth expiry (401 responses clear credentials)
+  useEffect(() => {
+    function handleAuthExpired() {
+      setAuthenticated(false);
+      setAuthError('Session expired. Please sign in again.');
+    }
+    window.addEventListener('auth:expired', handleAuthExpired);
+    return () => window.removeEventListener('auth:expired', handleAuthExpired);
+  }, []);
 
   // Global keyboard shortcuts
   useGlobalKeyboardShortcuts({
@@ -101,6 +115,15 @@ function App() {
   const handleImportFeeds = useCallback(async (opmlContent) => {
     await importFeeds(opmlContent, fetchArticles);
   }, [importFeeds, fetchArticles]);
+
+  if (!isAuthenticated) {
+    return (
+      <Login
+        onLogin={() => { setAuthenticated(true); setAuthError(null); }}
+        error={authError}
+      />
+    );
+  }
 
   return (
     <div className="app">
