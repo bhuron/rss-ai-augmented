@@ -33,9 +33,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Basic auth (skipped if env vars are empty)
-app.use(basicAuth);
-
 // Initialize database
 initDatabase();
 
@@ -53,6 +50,7 @@ setInterval(() => {
 }, 60 * 60 * 1000);
 
 // Image proxy to bypass CORS/hotlinking restrictions
+// Must be defined BEFORE basicAuth — <img> tags can't send auth headers
 app.get('/api/image-proxy', async (req, res) => {
   const { url } = req.query;
 
@@ -112,6 +110,10 @@ app.get('/api/image-proxy', async (req, res) => {
     res.status(500).send('Failed to proxy image');
   }
 });
+
+// Basic auth (skipped if env vars are empty)
+// Applied AFTER image-proxy so <img> tags can load images (they can't send auth headers)
+app.use(basicAuth);
 
 // Error handling middleware (imported from middleware/errorHandler.js)
 
