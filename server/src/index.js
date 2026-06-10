@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import dotenv from 'dotenv';
 import { initDatabase, shutdownDatabase, articleOps } from './services/database.js';
 import { validateUrl, cleanCache } from './services/url-validator.js';
@@ -24,6 +25,7 @@ app.use(cors({
   origin: corsOrigins,
   credentials: true
 }));
+app.use(compression());
 app.use(express.json({ charset: 'utf-8' }));
 app.use(express.urlencoded({ extended: true, charset: 'utf-8' }));
 

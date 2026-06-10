@@ -114,15 +114,20 @@ export const articleOps = {
     let articles = db.articles;
     if (feedId) articles = articles.filter(a => a.feed_id === feedId);
     if (unreadOnly) articles = articles.filter(a => !a.is_read);
+
+    // Pre-compute feed title map to avoid O(n*m) lookups
+    const feedTitleMap = new Map(db.feeds.map(f => [f.id, f.title]));
+
     return articles.map(a => ({
       ...a,
-      feed_title: db.feeds.find(f => f.id === a.feed_id)?.title || 'Unknown'
+      feed_title: feedTitleMap.get(a.feed_id) || 'Unknown'
     })).sort((a, b) => new Date(b.pub_date) - new Date(a.pub_date));
   },
   getByIds: (ids) => {
+    const feedTitleMap = new Map(db.feeds.map(f => [f.id, f.title]));
     return db.articles.filter(a => ids.includes(a.id)).map(a => ({
       ...a,
-      feed_title: db.feeds.find(f => f.id === a.feed_id)?.title || 'Unknown'
+      feed_title: feedTitleMap.get(a.feed_id) || 'Unknown'
     }));
   },
   insert: (feedId, title, link, content, pubDate, imageUrl = null) => {

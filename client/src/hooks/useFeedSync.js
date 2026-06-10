@@ -43,18 +43,7 @@ export function useFeedSync({ fetchArticles, setAllArticles }) {
 
         for (const line of lines) {
           try {
-            const data = JSON.parse(line);
-
-            if (data.type === 'progress') {
-              // Update articles progressively as feeds complete
-              const allRes = await fetch('/api/articles', { headers: authHeaders() });
-              if (!allRes.ok) {
-                const err = await allRes.json().catch(() => ({}));
-                throw new APIError(err.error || 'Failed to fetch articles', allRes.status);
-              }
-              const allData = await allRes.json();
-              setAllArticles(allData);
-            }
+            JSON.parse(line); // Validate JSON but skip mid-sync re-fetches
           } catch (e) {
             // Ignore parse errors for SSE stream
           }
